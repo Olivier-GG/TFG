@@ -63,7 +63,7 @@ def spawnearVehiculoAutonomo (enviroment, blueprint_library):
     listaActores.append(camara)
 
     #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
-    camara.listen(moverEspectador(enviroment, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
+    camara.listen(lambda image: moverEspectador(enviroment, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
 
     print("Vehiculo con sensores spawneado")
 
