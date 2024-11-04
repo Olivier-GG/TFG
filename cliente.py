@@ -9,7 +9,7 @@ import carla
 import glob
 import os
 import sys
-
+import time
 
 # Encontrar modulo de carla
 try:
@@ -37,7 +37,7 @@ def procesarImagen(imagen): #Para que se vea como circula el coche
 
 """""""""
 
-#Apaño para poder ver el coche moverse gracias al espectador
+#Apano para poder ver el coche moverse gracias al espectador
 def moverEspectador(world, vehicle):
     spectator = world.get_spectator()
     transform = vehicle.get_transform()
@@ -71,11 +71,17 @@ def spawnearVehiculoAutonomo (enviroment, blueprint_library):
     #||||||||| Control del vehiculo |||||||||||
 
     #vehiculoAutonomo.apply_control(carla.VehicleControl(throttle=0.5, steer=0.0))
-    vehiculoAutonomo.set_autopilot(True)
+    #vehiculoAutonomo.set_autopilot(True)
+    return vehiculoAutonomo
 
+def MoverCocheAutonomoAleatorio(vehiculo):
+    
+    giroAleatorio = random.uniform(-1, 1)
+    print(giroAleatorio)
+    acelerarAleatorio = random.uniform(-1, 1)
+    print(acelerarAleatorio)
 
-
-
+    vehiculo.apply_control(carla.VehicleControl(throttle=acelerarAleatorio, steer=giroAleatorio))
 
 
 
@@ -91,14 +97,14 @@ def main () :
     blueprint_library = enviroment.get_blueprint_library()
 
 
-    #||||| Paso 2, Spawneo de trafico para poder realizar la simulación ||||||||
+    #||||| Paso 2, Spawneo de trafico para poder realizar la simulacion ||||||||
  
     #print("\nProcedo a spawnear 5 coches y 10 peatones")
     #spawnearCoches(5,10)
 
-    #|||||| Paso 2, Spawnear vehicul, y añadirle todos los sensores necesarios |||||
+    #|||||| Paso 2, Spawnear vehicul, y anadirle todos los sensores necesarios |||||
 
-    spawnearVehiculoAutonomo(enviroment, blueprint_library)
+    cocheAutonomo = spawnearVehiculoAutonomo(enviroment, blueprint_library)
 
     #|||||| Paso 4, Ejecutar entrenamiento |||||
 
@@ -108,13 +114,16 @@ def main () :
     try:
 
         while True:
-            i=0
+            MoverCocheAutonomoAleatorio(cocheAutonomo)
+            time.sleep(1)
 
     except KeyboardInterrupt:
         cliente.apply_batch([carla.command.DestroyActor(x) for x in listaActores])
         print("Se ha vaciado toda la lista de actores")
 
 
+
+#Para que se ejecute el main cuando se inicia el programa
 
 if __name__ == '__main__':
 
