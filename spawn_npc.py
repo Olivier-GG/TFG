@@ -264,7 +264,7 @@ def spawnearCoches(coches, peatones):
             # max speed
             all_actors[i].set_max_speed(float(walker_speed[int(i/2)]))
 
-        print('spawned %d vehicles and %d walkers, press Ctrl+C to exit.' % (len(vehicles_list), len(walkers_list)))
+        print('Han Spawneado %d vehiculos y  %d peatones.\n' % (len(vehicles_list), len(walkers_list)))
 
         # example of how to use parameters
         traffic_manager.global_percentage_speed_difference(30.0)
@@ -283,14 +283,14 @@ def spawnearCoches(coches, peatones):
             settings.fixed_delta_seconds = None
             world.apply_settings(settings)
 
-        print('\ndestroying %d vehicles' % len(vehicles_list))
+        print('\nDestruidos %d vehiculos' % len(vehicles_list))
         client.apply_batch([carla.command.DestroyActor(x) for x in vehicles_list])
 
         # stop walker controllers (list is [controller, actor, controller, actor ...])
         for i in range(0, len(all_id), 2):
             all_actors[i].stop()
 
-        print('\ndestroying %d walkers' % len(walkers_list))
+        print('Destruidos %d peatones\n' % len(walkers_list))
         client.apply_batch([carla.command.DestroyActor(x) for x in all_id])
 
         time.sleep(0.5)

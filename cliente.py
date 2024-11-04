@@ -10,6 +10,8 @@ import glob
 import os
 import sys
 
+
+# Encontrar modulo de carla
 try:
     sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
         sys.version_info.major,
@@ -20,34 +22,39 @@ except IndexError:
 
 
 
-listaActores = []
-client = carla.Client('localhost', 2000)
-client.set_timeout(5.0)
-enviroment = client.get_world()
-#enviroment = client.load_world('Town07')
+listaActores = [] #Se añaden todos los actores para poder ser borrados al final de la ejecucion
 
-
-blueprint_library = enviroment.get_blueprint_library()
-
+"""""""""
+#Va un poco lagado entonces no lo utilizo, dejas para hacer video futuro
 
 def procesarImagen(imagen): #Para que se vea como circula el coche
     imagen = np.array(imagen.raw_data)
     img = imagen.reshape((600,800,4))
-    img = img[:,:,:3]
+    img2 = img[:,:,:3]
 
-    cv2.imshow("img", img)
+    cv2.imshow("", img2)
     cv2.waitKey(100)
 
+"""""""""
+
+#Apaño para poder ver el coche moverse gracias al espectador
+def moverEspectador(world, vehicle):
+    spectator = world.get_spectator()
+    transform = vehicle.get_transform()
+    spectator.set_transform(carla.Transform(transform.location + carla.Location(z=50),
+    carla.Rotation(pitch=-90)))
 
 
-
-def spawnearVehiculoAutonomo (enviroment):
+def spawnearVehiculoAutonomo (enviroment, blueprint_library):
+     #Donde vamos a respawnear el coche
     transform = enviroment.get_map().get_spawn_points()[0]
     #transform = random.choice(enviroment.get_map().get_spawn_points()[0] para que el sitio de respawn sea random
     
+    #Spawneamos el vehiculo
     vehiculoAutonomo = enviroment.try_spawn_actor(blueprint_library.filter('vehicle.*.*')[0], transform)
     listaActores.append(vehiculoAutonomo)
 
+    #Spawneamos camara para ver vehiculo
     camarab = blueprint_library.find('sensor.camera.rgb')
     camarab.set_attribute('image_size_x', '800')
     camarab.set_attribute('image_size_y', '600')
@@ -55,13 +62,18 @@ def spawnearVehiculoAutonomo (enviroment):
     camara = enviroment.try_spawn_actor(blueprint_library.find('sensor.camera.rgb'),  carla.Transform(carla.Location(x=-7, z=3)), attach_to=vehiculoAutonomo)
     listaActores.append(camara)
 
-    #vehiculoAutonomo.apply_control(carla.VehicleControl(throttle=0.5, steer=0.0))
-    vehiculoAutonomo.set_autopilot(True)
+    #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
+    camara.listen(moverEspectador(enviroment, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
 
     print("Vehiculo con sensores spawneado")
 
 
-    camara.listen(lambda image: procesarImagen(image))
+    #||||||||| Control del vehiculo |||||||||||
+
+    #vehiculoAutonomo.apply_control(carla.VehicleControl(throttle=0.5, steer=0.0))
+    vehiculoAutonomo.set_autopilot(True)
+
+
 
 
 
@@ -70,35 +82,48 @@ def spawnearVehiculoAutonomo (enviroment):
 
 def main () :
 
+    #|||| Paso 1, conectar el cliente con el servidor
+
+    cliente = carla.Client('localhost', 2000)
+    cliente.set_timeout(5.0)
+    enviroment = cliente.get_world()
+    #enviroment = cliente.load_world('Town01')
+    blueprint_library = enviroment.get_blueprint_library()
+
+
+    #||||| Paso 2, Spawneo de trafico para poder realizar la simulación ||||||||
  
-   
-    #print("Procedo a spawnear 5 coches y 10' peatones")
+    #print("\nProcedo a spawnear 5 coches y 10 peatones")
     #spawnearCoches(5,10)
 
-    spawnearVehiculoAutonomo(enviroment)
+    #|||||| Paso 2, Spawnear vehicul, y añadirle todos los sensores necesarios |||||
+
+    spawnearVehiculoAutonomo(enviroment, blueprint_library)
+
+    #|||||| Paso 4, Ejecutar entrenamiento |||||
 
 
 
-    while True :
-        i = 0
+    #Mientras no haya codigo de Ia se deja el bucle para que el coche se siga moviendo hasta que se pulse ctrC
+    try:
+
+        while True:
+            i=0
+
+    except KeyboardInterrupt:
+        cliente.apply_batch([carla.command.DestroyActor(x) for x in listaActores])
+        print("Se ha vaciado toda la lista de actores")
 
 
-
-
-
-
-
-#Esto solo se ejecuta si esta funcion ha sido ejecutada directamente y no desde un import de otra funcion, siempre que acaba el programa vacia la lista de actores.
 
 if __name__ == '__main__':
 
     try:
-        main()
-    except KeyboardInterrupt:
-        pass
+        main()  
     finally:
-        client.apply_batch([carla.command.DestroyActor(x) for x in listaActores])
-        print("Se ha vaciado toda la lista de actores")
+       print("Done")
+
+
 
 
 
