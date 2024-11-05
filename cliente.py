@@ -3,6 +3,7 @@ import os
 import sys
 import random
 from spawn_npc import spawnearCoches
+from spawnearNPC import Spawn
 import cv2
 import numpy as np
 import carla
@@ -99,9 +100,12 @@ def main () :
 
     #||||| Paso 2, Spawneo de trafico para poder realizar la simulacion ||||||||
  
-    #print("\nProcedo a spawnear 5 coches y 10 peatones")
+    print("\nProcedo a spawnear 10 coches")
     #spawnearCoches(5,10)
+    
+    #listaActores.extend(Spawn(enviroment,blueprint_library,10,10))
 
+    print("Han spawneado muchos 5 coche")
     #|||||| Paso 2, Spawnear vehicul, y anadirle todos los sensores necesarios |||||
 
     cocheAutonomo = spawnearVehiculoAutonomo(enviroment, blueprint_library)
