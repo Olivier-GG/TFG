@@ -55,6 +55,8 @@ def spawnearVehiculoAutonomo (enviroment, blueprint_library):
     vehiculoAutonomo = enviroment.try_spawn_actor(blueprint_library.filter('vehicle.*.*')[0], transform)
     listaActores.append(vehiculoAutonomo)
 
+    #|||||||| Sensores ||||||||||
+
     #Spawneamos camara para ver vehiculo
     camarab = blueprint_library.find('sensor.camera.rgb')
     camarab.set_attribute('image_size_x', '800')
@@ -63,10 +65,35 @@ def spawnearVehiculoAutonomo (enviroment, blueprint_library):
     camara = enviroment.try_spawn_actor(blueprint_library.find('sensor.camera.rgb'),  carla.Transform(carla.Location(x=-7, z=3)), attach_to=vehiculoAutonomo)
     listaActores.append(camara)
 
+    #Spawneamos sensor de colision
+    sensorColisionb = blueprint_library.find('sensor.other.collision')
+    sensorColision = enviroment.try_spawn_actor(sensorColisionb, carla.Transform(), attach_to=vehiculoAutonomo)
+    listaActores.append(sensorColision)
+
+    #Spawneamos sensor de invasion de linea
+    sensorInvasionb = blueprint_library.find('sensor.other.lane_invasion')
+    sensorInvasion = enviroment.try_spawn_actor(sensorInvasionb, carla.Transform(), attach_to=vehiculoAutonomo)
+    listaActores.append(sensorInvasion)
+
+    #Spawneamos sensor de obstaculos
+    sensorObstaculosb = blueprint_library.find('sensor.other.obstacle')
+    sensorObstaculosb.set_attribute('distance', '20')
+
+    sensorObstaculos = enviroment.try_spawn_actor(sensorObstaculosb, carla.Transform(), attach_to=vehiculoAutonomo)
+    listaActores.append(sensorObstaculos)
+
+    #Activamos los sensores
+
     #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
     camara.listen(lambda image: moverEspectador(enviroment, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
+    #sensorColision.listen(lambda colision: print("Colision detectada")) #Para que se imprima por pantalla cuando se detecte una colision
+    sensorInvasion.listen(lambda invasion: print("Invasion de linea detectada")) #Para que se imprima por pantalla cuando se detecte una invasion de linea
+    sensorObstaculos.listen(lambda obstaculo: print("Obstaculo" + obstaculo.other_actor.type_id + "detectado a " + str(obstaculo.distance) + " metros")) #Para que se imprima por pantalla cuando se detecte un obstaculo
+
 
     print("Vehiculo con sensores spawneado")
+
+
 
 
     #||||||||| Control del vehiculo |||||||||||
@@ -75,12 +102,14 @@ def spawnearVehiculoAutonomo (enviroment, blueprint_library):
     #vehiculoAutonomo.set_autopilot(True)
     return vehiculoAutonomo
 
+
+#Mueve el coche con inputs totalmente aleatorios
 def MoverCocheAutonomoAleatorio(vehiculo):
     
     giroAleatorio = random.uniform(-1, 1)
-    print(giroAleatorio)
+    #print("girio aleatorio: " + str(giroAleatorio))
     acelerarAleatorio = random.uniform(-1, 1)
-    print(acelerarAleatorio)
+    #print("aceleracion aleatoria" + str(acelerarAleatorio))
 
     vehiculo.apply_control(carla.VehicleControl(throttle=acelerarAleatorio, steer=giroAleatorio))
 
@@ -89,37 +118,39 @@ def MoverCocheAutonomoAleatorio(vehiculo):
 
 def main () :
 
-    #|||| Paso 1, conectar el cliente con el servidor
-
-    cliente = carla.Client('localhost', 2000)
-    cliente.set_timeout(5.0)
-    enviroment = cliente.get_world()
-    #enviroment = cliente.load_world('Town01')
-    blueprint_library = enviroment.get_blueprint_library()
-
-
-    #||||| Paso 2, Spawneo de trafico para poder realizar la simulacion ||||||||
- 
-    print("\nProcedo a spawnear 10 coches")
-    #spawnearCoches(5,10)
-    
-    #listaActores.extend(Spawn(enviroment,blueprint_library,10,10))
-
-    print("Han spawneado muchos 5 coche")
-    #|||||| Paso 2, Spawnear vehicul, y anadirle todos los sensores necesarios |||||
-
-    cocheAutonomo = spawnearVehiculoAutonomo(enviroment, blueprint_library)
-
-    #|||||| Paso 4, Ejecutar entrenamiento |||||
-
-
-
-    #Mientras no haya codigo de Ia se deja el bucle para que el coche se siga moviendo hasta que se pulse ctrC
     try:
+
+        #|||| Paso 1, conectar el cliente con el servidor
+
+        cliente = carla.Client('localhost', 2000)
+        cliente.set_timeout(5.0)
+        enviroment = cliente.get_world()
+        #enviroment = cliente.load_world('Town01')
+        blueprint_library = enviroment.get_blueprint_library()
+
+
+        #||||| Paso 2, Spawneo de trafico para poder realizar la simulacion ||||||||
+    
+        print("\nProcedo a spawnear 10 coches")
+        #spawnearCoches(5,10)
+        
+        #listaActores.extend(Spawn(enviroment,blueprint_library,10,10))
+
+        print("Han spawneado muchos 5 coche")
+        #|||||| Paso 2, Spawnear vehicul, y anadirle todos los sensores necesarios |||||
+
+        cocheAutonomo = spawnearVehiculoAutonomo(enviroment, blueprint_library)
+
+        #|||||| Paso 4, Ejecutar entrenamiento |||||
+
+
+
+        #Mientras no haya codigo de Ia se deja el bucle para que el coche se siga moviendo hasta que se pulse ctrC
+    
 
         while True:
             MoverCocheAutonomoAleatorio(cocheAutonomo)
-            time.sleep(1)
+            time.sleep(2)
 
     except KeyboardInterrupt:
         cliente.apply_batch([carla.command.DestroyActor(x) for x in listaActores])
