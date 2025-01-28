@@ -44,6 +44,7 @@ def moverEspectador(world, vehicle):
     transform = vehicle.get_transform()
     spectator.set_transform(carla.Transform(transform.location + carla.Location(z=50),
     carla.Rotation(pitch=-90)))
+    
 
 
 def spawnearVehiculoAutonomo (enviroment, blueprint_library):
@@ -77,7 +78,8 @@ def spawnearVehiculoAutonomo (enviroment, blueprint_library):
 
     #Spawneamos sensor de obstaculos
     sensorObstaculosb = blueprint_library.find('sensor.other.obstacle')
-    sensorObstaculosb.set_attribute('distance', '30')
+    sensorObstaculosb.set_attribute('distance', '15')
+    sensorObstaculosb.set_attribute('hit_radius', '4')
     sensorObstaculosb.set_attribute('only_dynamics', 'True')
     sensorObstaculosb.set_attribute('sensor_tick', '1.0')
 
@@ -134,10 +136,10 @@ def main () :
 
         #||||| Paso 2, Spawneo de trafico para poder realizar la simulacion ||||||||
     
-        print("\nProcedo a spawnear 10 coches")
-        #spawnearCoches(5,10)
-        
-        #listaActores.extend(Spawn(enviroment,blueprint_library,10,10))
+
+        print("\nProcedo a spawnear 30 coches y 10 peatones")
+        listaActores.extend(spawnearCoches(30,10)) #Codigo de ejemplo carla 
+        #listaActores.extend(Spawn(enviroment,blueprint_library,10,10)) #Codigo hecho por mi
 
         print("Han spawneado muchos 5 coche")
         #|||||| Paso 2, Spawnear vehicul, y anadirle todos los sensores necesarios |||||
