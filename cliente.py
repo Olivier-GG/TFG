@@ -77,7 +77,10 @@ def spawnearVehiculoAutonomo (enviroment, blueprint_library):
 
     #Spawneamos sensor de obstaculos
     sensorObstaculosb = blueprint_library.find('sensor.other.obstacle')
-    sensorObstaculosb.set_attribute('distance', '20')
+    sensorObstaculosb.set_attribute('distance', '30')
+    sensorObstaculosb.set_attribute('only_dynamics', 'True')
+    sensorObstaculosb.set_attribute('sensor_tick', '1.0')
+
 
     sensorObstaculos = enviroment.try_spawn_actor(sensorObstaculosb, carla.Transform(), attach_to=vehiculoAutonomo)
     listaActores.append(sensorObstaculos)
@@ -88,7 +91,7 @@ def spawnearVehiculoAutonomo (enviroment, blueprint_library):
     camara.listen(lambda image: moverEspectador(enviroment, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
     #sensorColision.listen(lambda colision: print("Colision detectada")) #Para que se imprima por pantalla cuando se detecte una colision
     sensorInvasion.listen(lambda invasion: print("Invasion de linea detectada")) #Para que se imprima por pantalla cuando se detecte una invasion de linea
-    sensorObstaculos.listen(lambda obstaculo: print("Obstaculo" + obstaculo.other_actor.type_id + "detectado a " + str(obstaculo.distance) + " metros")) #Para que se imprima por pantalla cuando se detecte un obstaculo
+    sensorObstaculos.listen(lambda obstaculo: print("Obstaculo " + obstaculo.other_actor.type_id + " detectado a " + str(obstaculo.distance) + " metros")) #Para que se imprima por pantalla cuando se detecte un obstaculo
 
 
     print("Vehiculo con sensores spawneado")
@@ -155,6 +158,12 @@ def main () :
     except KeyboardInterrupt:
         cliente.apply_batch([carla.command.DestroyActor(x) for x in listaActores])
         print("Se ha vaciado toda la lista de actores")
+
+    except Exception as e:
+        print("Error: " + str(e))
+        cliente.apply_batch([carla.command.DestroyActor(x) for x in listaActores])
+        print("Se ha vaciado toda la lista de actores")
+
 
 
 
