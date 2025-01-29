@@ -99,7 +99,7 @@ def spawnearVehiculoAutonomo (enviroment, blueprint_library):
     #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
     camara.listen(lambda image: moverEspectador(enviroment, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
     sensorColision.listen(lambda colision: destruirCoche(colision)) #Para que se imprima por pantalla cuando se detecte una colision
-    sensorInvasion.listen(lambda invasion: print("Invasion de linea detectada")) #Para que se imprima por pantalla cuando se detecte una invasion de linea
+    sensorInvasion.listen(lambda invasion: print("Invasion de linea detectada, linea de tipo: " + invasion.type)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
     sensorObstaculos.listen(lambda obstaculo: print("Obstaculo " + obstaculo.other_actor.type_id + " detectado a " + str(obstaculo.distance) + " metros")) #Para que se imprima por pantalla cuando se detecte un obstaculo
 
 
@@ -114,8 +114,8 @@ def spawnearVehiculoAutonomo (enviroment, blueprint_library):
 
 
 def destruirCoche(colision):
-    print("Colision detectada, eliminando vehiculo")
-    destruirActores()
+    print("Colision detectada con " + colision.other_actor + ", eliminando vehiculo")
+    destruirCocheAutonomo()
 
 
 
