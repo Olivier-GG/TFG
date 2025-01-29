@@ -24,35 +24,19 @@ except IndexError:
 
 
 
+# |||||| Listas con todos los actores ||||||||
+
 listaActores = [] #Se añaden todos los actores
 listaCocheAutonomo = [] #Se añade todos los sensores del coche autonomo y el coche autonomo para poder ser borrados
 listaNPC = [] #Se añaden todos los sensores de los NPC y los NPC para poder ser borrados
 
-"""""""""
-#Va un poco lagado entonces no lo utilizo, dejas para hacer video futuro
 
-def procesarImagen(imagen): #Para que se vea como circula el coche
-    imagen = np.array(imagen.raw_data)
-    img = imagen.reshape((600,800,4))
-    img2 = img[:,:,:3]
 
-    cv2.imshow("", img2)
-    cv2.waitKey(100)
-
-"""""""""
-
-#Apano para poder ver el coche moverse gracias al espectador
-def moverEspectador(world, vehicle):
-    if vehicle.is_alive:
-        spectator = world.get_spectator()
-        transform = vehicle.get_transform()
-        spectator.set_transform(carla.Transform(transform.location + carla.Location(z=50),
-        carla.Rotation(pitch=-90)))
-    
-
+# ||||||| Funcion para spawnear el coche autonomo y añadirle los sensores necesarios ||||||||||
 
 def spawnearVehiculoAutonomo (enviroment, blueprint_library):
-     #Donde vamos a respawnear el coche
+
+    #Donde vamos a respawnear el coche
     transform = enviroment.get_map().get_spawn_points()[0]
     #transform = random.choice(enviroment.get_map().get_spawn_points()[0] para que el sitio de respawn sea random
     
@@ -113,12 +97,42 @@ def spawnearVehiculoAutonomo (enviroment, blueprint_library):
     return vehiculoAutonomo
 
 
+
+
+
+# |||||| Todas funciones para procesar las información de los sensores ||||||||
+
+"""""""""
+#Va un poco lagado entonces no lo utilizo, dejas para hacer video futuro
+
+def procesarImagen(imagen): #Para que se vea como circula el coche
+    imagen = np.array(imagen.raw_data)
+    img = imagen.reshape((600,800,4))
+    img2 = img[:,:,:3]
+
+    cv2.imshow("", img2)
+    cv2.waitKey(100)
+
+"""""""""
+
+#Apano para poder ver el coche moverse gracias al espectador
+def moverEspectador(world, vehicle):
+    if vehicle.is_alive:
+        spectator = world.get_spectator()
+        transform = vehicle.get_transform()
+        spectator.set_transform(carla.Transform(transform.location + carla.Location(z=50),
+        carla.Rotation(pitch=-90)))
+    
+
 def destruirCoche(colision):
     print("Colision detectada con " + colision.other_actor + ", eliminando vehiculo")
     destruirCocheAutonomo()
 
 
 
+
+
+# |||||||| Funciones auxiliares ||||||||||
 
 #Mueve el coche con inputs totalmente aleatorios
 def MoverCocheAutonomoAleatorio(vehiculo):
@@ -133,6 +147,7 @@ def MoverCocheAutonomoAleatorio(vehiculo):
 
 
 
+# |||||||||||||| MAIN |||||||||||||||||
 def main () :
 
     try:
@@ -155,12 +170,11 @@ def main () :
         #listaActores.extend(Spawn(enviroment,blueprint_library,10,10)) #Codigo hecho por mi
 
         while True:
-            #|||||| Paso 2, Spawnear vehicul, y anadirle todos los sensores necesarios |||||
+            #|||||| Paso 2, Spawnear vehiculo, y anadirle todos los sensores necesarios |||||
 
             cocheAutonomo = spawnearVehiculoAutonomo(enviroment, blueprint_library)
 
             #|||||| Paso 4, Ejecutar entrenamiento |||||
-
 
 
             #Mientras no haya codigo de Ia se deja el bucle para que el coche se siga moviendo hasta que se pulse ctrC
@@ -168,12 +182,16 @@ def main () :
                 MoverCocheAutonomoAleatorio(cocheAutonomo)
                 time.sleep(2)
 
+
     except KeyboardInterrupt:
         destruirActores()
 
     except Exception as e:
         print("Error: " + str(e))
         destruirActores()
+
+
+
 
 
 # |||||||||| Funciones para destruir los actores ||||||||||
