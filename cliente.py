@@ -38,7 +38,7 @@ listaNPC = [] #Se añaden todos los sensores de los NPC y los NPC para poder ser
 
 # ||||||| Funcion para spawnear el coche autonomo y añadirle los sensores necesarios ||||||||||
 
-def spawnearVehiculoAutonomo (world, blueprint_library, cache): #Se le pasa el mundo y la libreria de blueprints para poder spawnear los actores 
+def spawnearVehiculoAutonomo (world, blueprint_library, cache, env): #Se le pasa el mundo y la libreria de blueprints para poder spawnear los actores 
 
     #Donde vamos a respawnear el coche
     transform = world.get_map().get_spawn_points()[0]
@@ -86,9 +86,9 @@ def spawnearVehiculoAutonomo (world, blueprint_library, cache): #Se le pasa el m
 
     #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
     #camara.listen(lambda image: moverEspectador(world, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
-    sensorColision.listen(lambda colision: manejadorColisiones(cache, colision)) #Para que se imprima por pantalla cuando se detecte una colision
-    sensorInvasion.listen(lambda invasion: manejarSensorLinea(cache, invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
-    sensorObstaculos.listen(lambda obstaculo: cache.append(1)) #Para que se imprima por pantalla cuando se detecte un obstaculo
+    sensorColision.listen(lambda colision: env.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision
+    sensorInvasion.listen(lambda invasion: env.manejarSensorLinea(invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
+    sensorObstaculos.listen(lambda obstaculo: env.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
 
 
     print("Vehiculo con sensores spawneado")
@@ -200,13 +200,13 @@ def main () :
         #Incializamos el entorno de gym
         env = CarlaEnv(cliente)
 
-        print(env.action_space)
-        print(env.observation_space)
         state_space = env.observation_space.n
         action_space = env.action_space.n
 
         #Inicializamos Qtable
         Qtable = initialize_q_table(state_space, action_space)
+
+        print("Conexion con el servidor establecida y todas las variables principales inicializadas")
 
         #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
 
@@ -218,7 +218,7 @@ def main () :
         n_eval_episodes = 100        # Total number of test episodes
 
         # Environment parameters
-        max_steps = 99               # Max steps per episode
+        max_steps = 150            # Max steps per episode
         gamma = 0.95                 # Discounting rate
         eval_seed = []               # The evaluation seed of the environment
 
@@ -239,7 +239,7 @@ def main () :
 
         #|||| Paso 3, comienza el entrenamiento ||||||||||
         
-        print("Comenzando el entrenamiento")
+        print("               Comenzando el entrenamiento        ")
 
         for episode in range(n_training_episodes):
             # Reduce epsilon (because we need less and less exploration)
@@ -251,13 +251,15 @@ def main () :
             truncated = False
 
             #Printemaos al final de cada episodio para ver como va la Qtable
-            print("Episode: " + str(episode))
+            print("\n\n |||||||||||||||||||||||||||||")
+            print("Episodio: " + str(episode))
             print(Qtable)
+            print("||||||||||||||||||||||||||||||| \n\n")
 
             # repeat
             for step in range(max_steps):
                 # Choose the action At using epsilon greedy policy
-                time.sleep(0.3)
+                time.sleep(0.2)
                 action = epsilon_greedy_policy(Qtable, state, epsilon, env)
                 print( "Action: " + str(action))
                 # Take action At and observe Rt+1 and St+1
@@ -344,7 +346,7 @@ class CarlaEnv(gym.Env):
 
     def reset(self):
         destruirCocheAutonomo()
-        self.cocheAutonomo = spawnearVehiculoAutonomo(self.world, self.blueprint_library, self.cache)
+        self.cocheAutonomo = spawnearVehiculoAutonomo(self.world, self.blueprint_library, self.cache, self)
         if self.cocheAutonomo is None:
             raise ValueError("Error al spawnear el vehículo autónomo")
         return self.get_observation() #Devuelve informacion al final de cada episodio
@@ -368,6 +370,7 @@ class CarlaEnv(gym.Env):
         # Verificar si el episodio ha terminado (por ejemplo, si el coche ha chocado)
         done = self.terminated()  # Lógica para determinar cuándo se acaba el episodio
 
+        print(self.cache) # Para ir viendo como va el entorno
         self.cache = [] #Vaciamos la cache para que no se acumulen los datos
 
         return info, state, reward, done
@@ -410,6 +413,24 @@ class CarlaEnv(gym.Env):
             elif elemento == 3:
                 acu -= 1
         return acu
+
+    #Funciones para manejar los sensores del coche autonomo
+
+    def manejarSensorLinea(self, invasion):
+        if 2 not in self.cache:
+            print("Invasion de linea detectada")
+            self.cache.append(2)
+
+    def manejadorColisiones(self, colision):
+        print("Colision detectada")
+        if 0 not in self.cache:
+            self.cache.append(0)
+    
+    def manejarSensorObstaculos(self, obstaculo):
+        if 1 not in self.cache:
+            print("Obstaculo detectado")
+            self.cache.append(1)    
+
 
 # |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 # |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
