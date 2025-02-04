@@ -10,6 +10,9 @@ import glob
 import os
 import sys
 import time
+import tqdm
+from typing_extensions import Literal
+import pdb
 import gymnasium as gym
 from gymnasium import spaces
 
@@ -35,7 +38,7 @@ listaNPC = [] #Se añaden todos los sensores de los NPC y los NPC para poder ser
 
 # ||||||| Funcion para spawnear el coche autonomo y añadirle los sensores necesarios ||||||||||
 
-def spawnearVehiculoAutonomo (world, blueprint_library): #Se le pasa el mundo y la libreria de blueprints para poder spawnear los actores
+def spawnearVehiculoAutonomo (world, blueprint_library, cache): #Se le pasa el mundo y la libreria de blueprints para poder spawnear los actores 
 
     #Donde vamos a respawnear el coche
     transform = world.get_map().get_spawn_points()[0]
@@ -82,10 +85,10 @@ def spawnearVehiculoAutonomo (world, blueprint_library): #Se le pasa el mundo y 
     #Activamos los sensores
 
     #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
-    camara.listen(lambda image: moverEspectador(world, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
-    sensorColision.listen(lambda colision: destruirCoche(colision)) #Para que se imprima por pantalla cuando se detecte una colision
-    sensorInvasion.listen(lambda invasion: print("Invasion de linea detectada, linea de tipo: " + invasion.type)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
-    sensorObstaculos.listen(lambda obstaculo: print("Obstaculo " + obstaculo.other_actor.type_id + " detectado a " + str(obstaculo.distance) + " metros")) #Para que se imprima por pantalla cuando se detecte un obstaculo
+    #camara.listen(lambda image: moverEspectador(world, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
+    sensorColision.listen(lambda colision: manejadorColisiones(cache, colision)) #Para que se imprima por pantalla cuando se detecte una colision
+    sensorInvasion.listen(lambda invasion: manejarSensorLinea(cache, invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
+    sensorObstaculos.listen(lambda obstaculo: cache.append(1)) #Para que se imprima por pantalla cuando se detecte un obstaculo
 
 
     print("Vehiculo con sensores spawneado")
@@ -125,10 +128,19 @@ def moverEspectador(world, vehicle):
         carla.Rotation(pitch=-90)))
     
 
-def destruirCoche(colision):
-    print("Colision detectada con " + colision.other_actor + ", eliminando vehiculo")
-    destruirCocheAutonomo()
-
+def manejarSensorLinea(cache, invasion):
+    """
+    print("Invasion de linea detectada, tipo: " + str(invasion.type))
+    if invasion.type == carla.LaneInvasionType.Solid:
+        cache.append(2)
+    elif invasion.type == carla.LaneInvasionType.Broken:
+        cache.append(3)
+    """
+    print("Invasion de linea detectada")
+    cache.append(2)
+def manejadorColisiones(cache, colision):
+    print("Colision detectada")
+    cache.append(0)
 
 
 
@@ -145,6 +157,30 @@ def MoverCocheAutonomoAleatorio(vehiculo):
 
     vehiculo.apply_control(carla.VehicleControl(throttle=acelerarAleatorio, steer=giroAleatorio))
 
+def initialize_q_table(state_space, action_space):
+  Qtable = np.zeros((state_space, action_space))
+  return Qtable
+
+def greedy_policy(Qtable, state):
+  # Exploitation: take the action with the highest state, action value
+  action = np.argmax(Qtable[state][:])
+
+  return action
+
+def epsilon_greedy_policy(Qtable, state, epsilon, env):
+  # Randomly generate a number between 0 and 1
+  random_num = random.uniform(0,1)
+  # if random_num > greater than epsilon --> exploitation
+  if random_num > epsilon:
+    # Take the action with the highest value given a state
+    # np.argmax can be useful here
+    action = greedy_policy(Qtable, state)
+  # else --> exploration
+  else:
+    action = env.action_space.sample()
+
+  return action
+
 
 
 
@@ -155,20 +191,44 @@ def main () :
 
         #|||| Paso 1, conectar el cliente con el servidor
         
-        """
         cliente = carla.Client('localhost', 2000)
         cliente.set_timeout(5.0)
-        enviroment = cliente.get_world()
+        world = cliente.get_world()
         #enviroment = cliente.load_world('Town01')
-        blueprint_library = enviroment.get_blueprint_library()
-        """
+        blueprint_library = world.get_blueprint_library()
 
-        env = CarlaEnv()
-        world = env.world
-        blueprint_library = env.blueprint_library
-        cliente = env.cliente
+        #Incializamos el entorno de gym
+        env = CarlaEnv(cliente)
 
         print(env.action_space)
+        print(env.observation_space)
+        state_space = env.observation_space.n
+        action_space = env.action_space.n
+
+        #Inicializamos Qtable
+        Qtable = initialize_q_table(state_space, action_space)
+
+        #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
+
+        # Training parameters
+        n_training_episodes = 10000  # Total training episodes
+        learning_rate = 0.7          # Learning rate
+
+        # Evaluation parameters
+        n_eval_episodes = 100        # Total number of test episodes
+
+        # Environment parameters
+        max_steps = 99               # Max steps per episode
+        gamma = 0.95                 # Discounting rate
+        eval_seed = []               # The evaluation seed of the environment
+
+        # Exploration parameters
+        max_epsilon = 1.0             # Exploration probability at start
+        min_epsilon = 0.05            # Minimum exploration probability
+        decay_rate = 0.0005            # Exponential decay rate for exploration prob
+
+        #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
 
         #||||| Paso 2, Spawneo de trafico para poder realizar la simulacion ||||||||
     
@@ -177,20 +237,45 @@ def main () :
         #listaNPC.extend(spawnearCoches(30,10)) 
         #listaActores.extend(Spawn(enviroment,blueprint_library,10,10)) #Codigo hecho por mi
 
-        while True:
-            #|||||| Paso 3, Spawnear vehiculo, y anadirle todos los sensores necesarios |||||
+        #|||| Paso 3, comienza el entrenamiento ||||||||||
+        
+        print("Comenzando el entrenamiento")
 
-            cocheAutonomo = spawnearVehiculoAutonomo(world, blueprint_library)
+        for episode in range(n_training_episodes):
+            # Reduce epsilon (because we need less and less exploration)
+            epsilon = min_epsilon + (max_epsilon - min_epsilon)*np.exp(-decay_rate*episode)
+            # Reset the environment
+            info, state = env.reset()
+            step = 0
+            terminated = False
+            truncated = False
 
-            #|||||| Paso 4, Ejecutar entrenamiento |||||
+            #Printemaos al final de cada episodio para ver como va la Qtable
+            print("Episode: " + str(episode))
+            print(Qtable)
+
+            # repeat
+            for step in range(max_steps):
+                # Choose the action At using epsilon greedy policy
+                time.sleep(0.3)
+                action = epsilon_greedy_policy(Qtable, state, epsilon, env)
+                print( "Action: " + str(action))
+                # Take action At and observe Rt+1 and St+1
+                # Take the action (a) and observe the outcome state(s') and reward (r)
+                info, new_state, reward, terminated = env.step(action)
+
+                # Update Q(s,a):= Q(s,a) + lr [R(s,a) + gamma * max Q(s',a') - Q(s,a)]
+                Qtable[state][action] = Qtable[state][action] + learning_rate * (reward + gamma * np.max(Qtable[new_state]) - Qtable[state][action])
+
+                # If terminated or truncated finish the episode
+                if terminated:
+                    break
+
+                # Our next state is the new state
+                state = new_state
 
 
-            #Mientras no haya codigo de Ia se deja el bucle para que el coche se siga moviendo hasta que se pulse ctrC
-            while cocheAutonomo.is_alive:
-                MoverCocheAutonomoAleatorio(cocheAutonomo)
-                time.sleep(2)
-
-
+    
     except KeyboardInterrupt:
         destruirActores()
 
@@ -205,24 +290,33 @@ def main () :
 # |||||||||| Funciones para destruir los actores ||||||||||
 
 def destruirNPC():
-    for npc in listaNPC:
-        npc.destroy()
-        listaNPC.remove(npc)
-        listaActores.remove(npc)
-    print("Se ha vaciado toda la lista de NPC")
+    if len(listaNPC) > 0:
+        for npc in listaNPC:
+            npc.destroy()
+            listaNPC.remove(npc)
+            listaActores.remove(npc)
+        print("Se ha vaciado toda la lista de NPC")
+    else:
+        print("No hay ningun NPC para destruir")
 
 def destruirCocheAutonomo():
-    for elemento in listaCocheAutonomo:
-        elemento.destroy()
-        listaCocheAutonomo.remove(elemento)
-        listaActores.remove(elemento)
-    print("Se ha vaciado la lista de todos los sensores y el coche autonomo")
+    if len(listaCocheAutonomo) > 0:
+        for elemento in listaCocheAutonomo:
+            elemento.destroy()
+            listaCocheAutonomo.remove(elemento)
+            listaActores.remove(elemento)
+        print("Se ha vaciado la lista de todos los sensores y el coche autonomo")
+    else:
+        print("No hay ningun coche autonomo para destruir")
 
 def destruirActores():
-    for actor in listaActores:
-        actor.destroy()
-        listaActores.remove(actor)
-    print("Se ha vaciado toda la lista de actores")
+    if len(listaActores) > 0:
+        for actor in listaActores:
+            actor.destroy()
+            listaActores.remove(actor)
+        print("Se ha vaciado toda la lista de actores")
+    else:
+        print("No hay ningun actor para destruir")
 
 
 
@@ -235,61 +329,64 @@ def destruirActores():
 # |||||| Clase para crear el entorno de gym ||||||||||
 
 class CarlaEnv(gym.Env):
-    def __init__(self):
+    def __init__(self, client):
         super(CarlaEnv, self).__init__()
 
-        #|||| Paso 1, conectar el cliente con el servidor
-
-        self.cliente = carla.Client('localhost', 2000)
-        self.cliente.set_timeout(5.0)
+        self.cliente = client
         self.world = self.cliente.get_world()
-        #enviroment = cliente.load_world('Town01')
         self.blueprint_library = self.world.get_blueprint_library()
-
-        print("Conectado al servidor de carla")
-
-        #||||| Paso 2, Spawneo de trafico para poder realizar la simulacion ||||||||
-    
-        #print("\nProcedo a spawnear 30 coches y 10 peatones")
-        #listaActores.extend(spawnearCoches(30,10)) #Codigo de ejemplo carla 
-        #listaNPC.extend(spawnearCoches(30,10)) 
-        #listaActores.extend(Spawn(enviroment,blueprint_library,10,10)) #Codigo hecho por mi
-
+        self.cocheAutomon = None
+        self.cache = []
+        
         self.action_space = spaces.Discrete(4)  # Puede ser aceleración, frenado, dirección, etc.
         self.observation_space = spaces.Discrete(6) # Todas las combinaciones de los  (linea y obstaculos), porque el de colisión es para acabar el episodio
 
 
-
     def reset(self):
         destruirCocheAutonomo()
-        cocheAutonomo = spawnearVehiculoAutonomo(world, blueprint_library)
+        self.cocheAutonomo = spawnearVehiculoAutonomo(self.world, self.blueprint_library, self.cache)
+        if self.cocheAutonomo is None:
+            raise ValueError("Error al spawnear el vehículo autónomo")
         return self.get_observation() #Devuelve informacion al final de cada episodio
 
     def step(self, action):
         # Convertir la acción en un comando para el coche (ejemplo, movimiento)
         if action == 0:
-            self.vehicle.apply_control(carla.VehicleControl(throttle=1.0, steer=0.0)) #Acelerar
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=1.0, steer=0.0)) #Acelerar
         elif action == 1:
-            self.vehicle.apply_control(carla.VehicleControl(throttle=0.0, steer=1.0)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=1.0)) #Girar 
         elif action == 2:
-            self.vehicle.apply_control(carla.VehicleControl(throttle=0.0, steer=-1.0)) #Girar
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-1.0)) #Girar
         else:
-            self.vehicle.apply_control(carla.VehicleControl(throttle=-1.0, steer=0.0)) #Frenar
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=-1.0, steer=0.0)) #Frenar
 
         # Obtener la observación actual (por ejemplo, imagen de la cámara)
-        observation = self.get_observation()
+        info, state = self.get_observation()
 
         # Calcular la recompensa (esto depende de tu objetivo específico)
-        reward = -1  # Aquí va la lógica de recompensa, ejemplo simple
-
+        reward = self.calcularRecompensa()  # Aquí va la lógica de recompensa, ejemplo simple
         # Verificar si el episodio ha terminado (por ejemplo, si el coche ha chocado)
-        done = False  # Lógica para determinar cuándo se acaba el episodio
+        done = self.terminated()  # Lógica para determinar cuándo se acaba el episodio
 
-        return observation, reward, done, {}
+        self.cache = [] #Vaciamos la cache para que no se acumulen los datos
+
+        return info, state, reward, done
 
     def get_observation(self):
-        # Obtener la información que se desea devolver para ir obtenienod feedback del entrenamiento
-        return "informacion"
+        
+        if 1 in self.cache and 2 not in self.cache and 3 not in self.cache:
+            return "obstaculo detectado, S5", 5
+        elif 1 not in self.cache and 2 in self.cache and 3 not in self.cache:
+            return "linea continua detectada, S4", 4
+        elif 1 not in self.cache and 2 not in self.cache and 3 in self.cache:
+            return "linea discontinua detectada, S3", 3
+        elif 1 in self.cache and 2 in self.cache and 3 not in self.cache:
+            return "obstaculo y linea continua detectada, S2", 2
+        elif 1 in self.cache and 2 not in self.cache and 3 in self.cache:
+            return "obstaculo y linea discontinua detectada, S1", 1
+        else:
+            return "Todo correcto S0", 0
+
 
     def render(self, mode='human'):
         # Renderizar el entorno para visualizarlo (si es necesario)
@@ -298,6 +395,21 @@ class CarlaEnv(gym.Env):
     def close(self):
         # Limpiar y cerrar los recursos al finalizar
         destruirActores()
+
+    def terminated(self):
+        if 0 in self.cache:
+            return True
+        else:
+            return False
+
+    def calcularRecompensa(self):
+        acu = 0
+        for elemento in self.cache:
+            if elemento == 2:
+                acu -= 1
+            elif elemento == 3:
+                acu -= 1
+        return acu
 
 # |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 # |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -315,7 +427,8 @@ if __name__ == '__main__':
     try:
         main()  
     finally:
-       print("Done")
+        destruirActores()
+        print("Done")
 
 
 

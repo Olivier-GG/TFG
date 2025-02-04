@@ -1,0 +1,5 @@
+- Hay que usar policy based.
+- Hay que usar monte carlo, para que aprenda al final de cada episodio.
+- Deep q learning, para que use una red neuronal en vez de una tabla
+
+- Para el primer caso entrenaria con qtables solo con los sensores sin los frames para que fuese más simple, a ver que es capaz de hacer.
