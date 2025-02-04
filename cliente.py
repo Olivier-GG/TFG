@@ -13,6 +13,7 @@ import time
 import tqdm
 from typing_extensions import Literal
 import pdb
+import json
 import gymnasium as gym
 from gymnasium import spaces
 
@@ -147,15 +148,20 @@ def manejadorColisiones(cache, colision):
 
 # |||||||| Funciones auxiliares ||||||||||
 
-#Mueve el coche con inputs totalmente aleatorios
-def MoverCocheAutonomoAleatorio(vehiculo):
-    
-    giroAleatorio = random.uniform(-1, 1)
-    #print("girio aleatorio: " + str(giroAleatorio))
-    acelerarAleatorio = random.uniform(-1, 1)
-    #print("aceleracion aleatoria" + str(acelerarAleatorio))
+# Guardar en JSON
+def guardar_qtable(q_table, filename):
+    with open("TablasFase1/" + filename + ".json", "w") as f:
+        json.dump(q_table.tolist(), f)
 
-    vehiculo.apply_control(carla.VehicleControl(throttle=acelerarAleatorio, steer=giroAleatorio))
+# Cargar desde JSON
+def cargar_qtable(filename="qtable.json"):
+    try:
+        with open(filename, "r") as f:
+            return np.array(json.load(f))
+    except FileNotFoundError:
+        print("No se encontró el archivo de la tabla Q, creando una nueva.")
+        return np.zeros((6, 4))  # Ajusta el tamaño
+
 
 def initialize_q_table(state_space, action_space):
   Qtable = np.zeros((state_space, action_space))
@@ -249,6 +255,11 @@ def main () :
             step = 0
             terminated = False
             truncated = False
+
+            #Cada 200 episodios guardamos la Qtable para ver la evolución
+            if episode % 200 == 0:
+                guardar_qtable(Qtable, "V1-" + str(episode))
+
 
             #Printemaos al final de cada episodio para ver como va la Qtable
             print("\n\n |||||||||||||||||||||||||||||")
@@ -367,6 +378,7 @@ class CarlaEnv(gym.Env):
 
         # Calcular la recompensa (esto depende de tu objetivo específico)
         reward = self.calcularRecompensa()  # Aquí va la lógica de recompensa, ejemplo simple
+        print("Recompensa: " + str(reward))
         # Verificar si el episodio ha terminado (por ejemplo, si el coche ha chocado)
         done = self.terminated()  # Lógica para determinar cuándo se acaba el episodio
 
