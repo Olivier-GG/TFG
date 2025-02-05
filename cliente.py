@@ -44,7 +44,7 @@ def spawnearVehiculoAutonomo (world, blueprint_library, cache, env): #Se le pasa
     #Donde vamos a respawnear el coche
     transform = world.get_map().get_spawn_points()[0]
     #transform = random.choice(enviroment.get_map().get_spawn_points()[0] para que el sitio de respawn sea random
-    time.sleep(0.2)# Para que a veces no detecte colisiones al respawnear el coche
+    time.sleep(0.5)# Para que a veces no detecte colisiones al respawnear el coche
     #Spawneamos el vehiculo
     vehiculoAutonomo = world.try_spawn_actor(blueprint_library.filter('vehicle.*.*')[0], transform)
 
@@ -218,7 +218,7 @@ def main () :
         #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
 
         # Training parameters
-        n_training_episodes = 10000  # Total training episodes
+        n_training_episodes = 1000  # Total training episodes
         learning_rate = 0.7          # Learning rate
 
         # Evaluation parameters
@@ -271,7 +271,7 @@ def main () :
             # repeat
             for step in range(max_steps):
                 # Choose the action At using epsilon greedy policy
-                time.sleep(0.2)
+                time.sleep(0.25) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
                 action = epsilon_greedy_policy(Qtable, state, epsilon, env)
                 print( "Action: " + str(action))
                 # Take action At and observe Rt+1 and St+1

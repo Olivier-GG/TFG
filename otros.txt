@@ -3,3 +3,9 @@
 - Deep q learning, para que use una red neuronal en vez de una tabla
 
 - Para el primer caso entrenaria con qtables solo con los sensores sin los frames para que fuese más simple, a ver que es capaz de hacer.
+
+
+
+Confirmar que esta arreglado el bug de respawnear y arreglar el tema del tipo de lineas.
+Lo siguiente es darle recompensa positiva por metros y tiempo y darle una recomepensa bastante negativa por chocar.
+Hay que poner menos angulo de giro.
