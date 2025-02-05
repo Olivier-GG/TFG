@@ -44,11 +44,9 @@ def spawnearVehiculoAutonomo (world, blueprint_library, cache, env): #Se le pasa
     #Donde vamos a respawnear el coche
     transform = world.get_map().get_spawn_points()[0]
     #transform = random.choice(enviroment.get_map().get_spawn_points()[0] para que el sitio de respawn sea random
-    
+    time.sleep(0.2)# Para que a veces no detecte colisiones al respawnear el coche
     #Spawneamos el vehiculo
     vehiculoAutonomo = world.try_spawn_actor(blueprint_library.filter('vehicle.*.*')[0], transform)
-    listaActores.append(vehiculoAutonomo)
-    listaCocheAutonomo.append(vehiculoAutonomo)
 
     #|||||||| Sensores ||||||||||
 
@@ -91,6 +89,9 @@ def spawnearVehiculoAutonomo (world, blueprint_library, cache, env): #Se le pasa
     sensorInvasion.listen(lambda invasion: env.manejarSensorLinea(invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
     sensorObstaculos.listen(lambda obstaculo: env.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
 
+    #Añadimos el coche autonomo al final de la lista de actores
+    listaActores.append(vehiculoAutonomo)
+    listaCocheAutonomo.append(vehiculoAutonomo)
 
     print("Vehiculo con sensores spawneado")
 
@@ -314,6 +315,7 @@ def destruirNPC():
 
 def destruirCocheAutonomo():
     if len(listaCocheAutonomo) > 0:
+        
         for elemento in listaCocheAutonomo:
             elemento.destroy()
             listaCocheAutonomo.remove(elemento)
