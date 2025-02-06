@@ -6,6 +6,4 @@
 
 
 
-Confirmar que esta arreglado el bug de respawnear y arreglar el tema del tipo de lineas.
 Lo siguiente es darle recompensa positiva por metros y tiempo y darle una recomepensa bastante negativa por chocar.
-Hay que poner menos angulo de giro.
