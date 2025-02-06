@@ -298,8 +298,9 @@ def destruirNPC():
     if len(listaNPC) > 0:
         for npc in listaNPC:
             npc.destroy()
-            listaNPC.remove(npc)
-            listaActores.remove(npc)
+            if npc in listaActores:
+                listaActores.remove(npc)
+        listaNPC.clear()
         print("Se ha vaciado toda la lista de NPC")
     else:
         print("No hay ningun NPC para destruir")
@@ -307,10 +308,18 @@ def destruirNPC():
 def destruirCocheAutonomo():
     if len(listaCocheAutonomo) > 0:
         #Se elimina la lista al reves para eliminar primero los sensores y despues el coche autonomo
-        for elemento in reversed(listaCocheAutonomo):
+        print(len(listaCocheAutonomo))
+        pdb.set_trace()
+        listaCocheAutonomo[2].stop()
+        listaCocheAutonomo[3].stop()
+        listaCocheAutonomo[4].stop()
+        for elemento in listaCocheAutonomo:
             elemento.destroy()
-            listaCocheAutonomo.remove(elemento)
-            listaActores.remove(elemento)
+            if elemento in listaActores:
+                listaActores.remove(elemento)
+
+        listaCocheAutonomo.clear()
+        
         print("Se ha vaciado la lista de todos los sensores y el coche autonomo")
     else:
         print("No hay ningun coche autonomo para destruir")
@@ -319,7 +328,9 @@ def destruirActores():
     if len(listaActores) > 0:
         for actor in reversed(listaActores):
             actor.destroy()
-            listaActores.remove(actor)
+            if actor in listaCocheAutonomo:
+                listaCocheAutonomo.remove(actor)
+        listaActores.clear()
         print("Se ha vaciado toda la lista de actores")
     else:
         print("No hay ningun actor para destruir")
@@ -442,7 +453,7 @@ class CarlaEnv(gym.Env):
             print("Invasion de linea detectada de tipo: " + str(invasion.crossed_lane_markings[0].type))
 
     def manejadorColisiones(self, colision):
-        print("Colision detectada")
+        #print("Colision detectada")
         if 0 not in self.cache:
             self.cache.append(0)
     
