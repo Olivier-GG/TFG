@@ -7,3 +7,5 @@
 
 
 Lo siguiente es darle recompensa positiva por metros y tiempo y darle una recomepensa bastante negativa por chocar.
+
+Si peta el simulador prueba cargar un nuevo mundo o reinicia el PC

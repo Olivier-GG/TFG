@@ -86,7 +86,7 @@ def spawnearVehiculoAutonomo (world, blueprint_library, cache, env): #Se le pasa
     #Activamos los sensores
 
     #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
-    #camara.listen(lambda image: moverEspectador(world, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
+    #camara.listen(lambda image: env.manejarSensorCamara(world, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
     sensorColision.listen(lambda colision: env.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision
     sensorInvasion.listen(lambda invasion: env.manejarSensorLinea(invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
     sensorObstaculos.listen(lambda obstaculo: env.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
@@ -113,31 +113,6 @@ def procesarImagen(imagen): #Para que se vea como circula el coche
     cv2.waitKey(100)
 
 """""""""
-
-#Apano para poder ver el coche moverse gracias al espectador
-def moverEspectador(world, vehicle):
-    if vehicle.is_alive:
-        spectator = world.get_spectator()
-        transform = vehicle.get_transform()
-        spectator.set_transform(carla.Transform(transform.location + carla.Location(z=50),
-        carla.Rotation(pitch=-90)))
-    
-
-def manejarSensorLinea(cache, invasion):
-    """
-    print("Invasion de linea detectada, tipo: " + str(invasion.type))
-    if invasion.type == carla.LaneInvasionType.Solid:
-        cache.append(2)
-    elif invasion.type == carla.LaneInvasionType.Broken:
-        cache.append(3)
-    """
-    print("Invasion de linea detectada")
-    cache.append(2)
-def manejadorColisiones(cache, colision):
-    print("Colision detectada")
-    cache.append(0)
-
-
 
 
 # |||||||| Funciones auxiliares ||||||||||
@@ -308,8 +283,7 @@ def destruirNPC():
 def destruirCocheAutonomo():
     if len(listaCocheAutonomo) > 0:
         #Se elimina la lista al reves para eliminar primero los sensores y despues el coche autonomo
-        print(len(listaCocheAutonomo))
-        pdb.set_trace()
+        #listaCocheAutonomo[1].stop()
         listaCocheAutonomo[2].stop()
         listaCocheAutonomo[3].stop()
         listaCocheAutonomo[4].stop()
@@ -461,6 +435,13 @@ class CarlaEnv(gym.Env):
         if 1 not in self.cache:
             print("Obstaculo detectado")
             self.cache.append(1)    
+
+    def manejarSensorCamara(self, world, vehicle):
+            spectator = world.get_spectator()
+            transform = vehicle.get_transform()
+            spectator.set_transform(carla.Transform(transform.location + carla.Location(z=50),
+            carla.Rotation(pitch=-90)))
+        
 
 
 # |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
