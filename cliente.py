@@ -44,9 +44,19 @@ def spawnearVehiculoAutonomo (world, blueprint_library, cache, env): #Se le pasa
     print("Empezamos a spawnear el coche autonomo")
     #Donde vamos a respawnear el coche
     #transform = world.get_map().get_spawn_points()[0]
-    transform = random.choice(world.get_map().get_spawn_points())# para que el sitio de respawn sea random
+    #transform = random.choice(world.get_map().get_spawn_points())# para que el sitio de respawn sea random
     #Spawneamos el vehiculo
-    vehiculoAutonomo = world.spawn_actor(blueprint_library.filter('vehicle.*.*')[0], transform)
+    #vehiculoAutonomo = world.spawn_actor(blueprint_library.filter('vehicle.*.*')[0], transform)
+
+    vehiculoAutonomo = None
+    for transform in world.get_map().get_spawn_points():
+        vehiculoAutonomo = world.try_spawn_actor(blueprint_library.filter('vehicle.*.*')[0], transform)
+        if vehiculoAutonomo is None:
+            print("Spawn point ocupado, probando otro...")
+        else:
+            print("Vehículo spawneado exitosamente")
+            break
+
     listaActores.append(vehiculoAutonomo)
     listaCocheAutonomo.append(vehiculoAutonomo)
     if vehiculoAutonomo is None:
@@ -191,6 +201,7 @@ def main () :
         
         cliente = carla.Client('localhost', 2000)
         cliente.set_timeout(5.0)
+        cliente.load_world('Town01')
         world = cliente.get_world()
         #enviroment = cliente.load_world('Town01')
         blueprint_library = world.get_blueprint_library()
@@ -254,7 +265,6 @@ def main () :
             info, state = env.reset()
             step = 0
             terminated = False
-            truncated = False
 
             #Cada 200 episodios guardamos la Qtable para ver la evolución
             if episode % 200 == 0:
@@ -312,12 +322,14 @@ def destruirCocheAutonomo():
         listaCocheAutonomo[3].stop()
         listaCocheAutonomo[4].stop()
         for elemento in listaCocheAutonomo:
-            elemento.destroy()
+            correcto = elemento.destroy()
+            if correcto:
+                print("Elemento destruido")
             if elemento in listaActores:
                 listaActores.remove(elemento)
 
         listaCocheAutonomo.clear()
-        time.sleep(2)#Tiempo de precaución antes de respawnear otro coche
+        time.sleep(3)#Tiempo de precaución antes de respawnear otro coche
         
         print("Se ha vaciado la lista de todos los sensores y el coche autonomo")
     else:
@@ -455,6 +467,7 @@ class CarlaEnv(gym.Env):
         if 0 not in self.cache:
             self.cache.append(0)
             print("Colision detectada")
+
     def manejarSensorObstaculos(self, obstaculo):
         if 1 not in self.cache:
             print("Obstaculo detectado")
