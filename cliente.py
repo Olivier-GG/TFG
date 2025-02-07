@@ -41,15 +41,19 @@ listaNPC = [] #Se añaden todos los sensores de los NPC y los NPC para poder ser
 
 def spawnearVehiculoAutonomo (world, blueprint_library, cache, env): #Se le pasa el mundo y la libreria de blueprints para poder spawnear los actores 
 
+    print("Empezamos a spawnear el coche autonomo")
     #Donde vamos a respawnear el coche
-    transform = world.get_map().get_spawn_points()[0]
-    #transform = random.choice(enviroment.get_map().get_spawn_points()[0] para que el sitio de respawn sea random
-    time.sleep(0.5)# Para que a veces no detecte colisiones al respawnear el coche
+    #transform = world.get_map().get_spawn_points()[0]
+    transform = random.choice(world.get_map().get_spawn_points())# para que el sitio de respawn sea random
     #Spawneamos el vehiculo
-    vehiculoAutonomo = world.try_spawn_actor(blueprint_library.filter('vehicle.*.*')[0], transform)
+    vehiculoAutonomo = world.spawn_actor(blueprint_library.filter('vehicle.*.*')[0], transform)
     listaActores.append(vehiculoAutonomo)
     listaCocheAutonomo.append(vehiculoAutonomo)
-
+    if vehiculoAutonomo is None:
+        print("No se ha podido spawnear el vehiculo autonomo")
+        return None
+    else:
+        print("coche autonomo spawneado")
     #|||||||| Sensores ||||||||||
 
     #Spawneamos camara para ver vehiculo
@@ -60,19 +64,31 @@ def spawnearVehiculoAutonomo (world, blueprint_library, cache, env): #Se le pasa
     camara = world.try_spawn_actor(blueprint_library.find('sensor.camera.rgb'),  carla.Transform(carla.Location(x=-7, z=3)), attach_to=vehiculoAutonomo)
     listaActores.append(camara)
     listaCocheAutonomo.append(camara)
-
+    if camara is None:
+        print("No se ha podido spawnear la camara")
+        return None
+    else:
+        print("Camara spawneada")
     #Spawneamos sensor de colision
     sensorColisionb = blueprint_library.find('sensor.other.collision')
     sensorColision = world.try_spawn_actor(sensorColisionb, carla.Transform(), attach_to=vehiculoAutonomo)
     listaActores.append(sensorColision)
     listaCocheAutonomo.append(sensorColision)
-
+    if sensorColision is None:
+        print("No se ha podido spawnear el sensor de colision")
+        return None
+    else:
+        print("Sensor de colision spawneado")
     #Spawneamos sensor de invasion de linea
     sensorInvasionb = blueprint_library.find('sensor.other.lane_invasion')
     sensorInvasion = world.try_spawn_actor(sensorInvasionb, carla.Transform(), attach_to=vehiculoAutonomo)
     listaActores.append(sensorInvasion)
     listaCocheAutonomo.append(sensorInvasion)
-
+    if sensorInvasion is None:
+        print("No se ha podido spawnear el sensor de invasion de linea")
+        return None
+    else:
+        print("Sensor de invasion de linea spawneado")
     #Spawneamos sensor de obstaculos
     sensorObstaculosb = blueprint_library.find('sensor.other.obstacle')
     sensorObstaculosb.set_attribute('distance', '15')
@@ -82,16 +98,23 @@ def spawnearVehiculoAutonomo (world, blueprint_library, cache, env): #Se le pasa
     sensorObstaculos = world.try_spawn_actor(sensorObstaculosb, carla.Transform(), attach_to=vehiculoAutonomo)
     listaActores.append(sensorObstaculos)
     listaCocheAutonomo.append(sensorObstaculos)
-
+    if sensorObstaculos is None:
+        print("No se ha podido spawnear el sensor de obstaculos")
+        return None
+    else:
+        print("Sensor de obstaculos spawneado")
     #Activamos los sensores
 
     #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
-    #camara.listen(lambda image: env.manejarSensorCamara(world, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
+    camara.listen(lambda image: env.manejarSensorCamara(world, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
     sensorColision.listen(lambda colision: env.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision
     sensorInvasion.listen(lambda invasion: env.manejarSensorLinea(invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
     sensorObstaculos.listen(lambda obstaculo: env.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-
-    print("Vehiculo con sensores spawneado")
+    if sensorColision is None or sensorInvasion is None or sensorObstaculos is None:
+        print("No se han podido activar los sensores")
+        return None
+    else:
+        print("Vehiculo con sensores spawneado")
 
     return vehiculoAutonomo
 
@@ -200,7 +223,7 @@ def main () :
         # Exploration parameters
         max_epsilon = 1.0             # Exploration probability at start
         min_epsilon = 0.05            # Minimum exploration probability
-        decay_rate = 0.005            # Exponential decay rate for exploration prob
+        decay_rate = 0.0005            # Exponential decay rate for exploration prob
 
         #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
@@ -219,6 +242,14 @@ def main () :
         for episode in range(n_training_episodes):
             # Reduce epsilon (because we need less and less exploration)
             epsilon = min_epsilon + (max_epsilon - min_epsilon)*np.exp(-decay_rate*episode)
+
+            #Printemaos al final de cada episodio para ver como va la Qtable
+            print("\n\n |||||||||||||||||||||||||||||")
+            print("Episodio: " + str(episode))
+            print ("Epsilon: " + str(epsilon))
+            print(Qtable)
+            print("||||||||||||||||||||||||||||||| \n\n")
+
             # Reset the environment
             info, state = env.reset()
             step = 0
@@ -228,14 +259,6 @@ def main () :
             #Cada 200 episodios guardamos la Qtable para ver la evolución
             if episode % 200 == 0:
                 guardar_qtable(Qtable, "V1-" + str(episode))
-
-
-            #Printemaos al final de cada episodio para ver como va la Qtable
-            print("\n\n |||||||||||||||||||||||||||||")
-            print("Episodio: " + str(episode))
-            print ("Epsilon: " + str(epsilon))
-            print(Qtable)
-            print("||||||||||||||||||||||||||||||| \n\n")
 
             # repeat
             for step in range(max_steps):
@@ -282,8 +305,9 @@ def destruirNPC():
 
 def destruirCocheAutonomo():
     if len(listaCocheAutonomo) > 0:
+        print(len(listaCocheAutonomo))
         #Se elimina la lista al reves para eliminar primero los sensores y despues el coche autonomo
-        #listaCocheAutonomo[1].stop()
+        listaCocheAutonomo[1].stop()
         listaCocheAutonomo[2].stop()
         listaCocheAutonomo[3].stop()
         listaCocheAutonomo[4].stop()
@@ -293,6 +317,7 @@ def destruirCocheAutonomo():
                 listaActores.remove(elemento)
 
         listaCocheAutonomo.clear()
+        time.sleep(2)#Tiempo de precaución antes de respawnear otro coche
         
         print("Se ha vaciado la lista de todos los sensores y el coche autonomo")
     else:
@@ -326,10 +351,10 @@ class CarlaEnv(gym.Env):
         self.cliente = client
         self.world = self.cliente.get_world()
         self.blueprint_library = self.world.get_blueprint_library()
-        self.cocheAutomon = None
+        self.cocheAutonomo = None
         self.cache = []
         
-        self.action_space = spaces.Discrete(9)  # Puede ser aceleración, frenado, dirección, etc.
+        self.action_space = spaces.Discrete(10)  # Puede ser aceleración, frenado, dirección, etc.
         self.observation_space = spaces.Discrete(6) # Todas las combinaciones de los  (linea y obstaculos), porque el de colisión es para acabar el episodio
 
 
@@ -427,10 +452,9 @@ class CarlaEnv(gym.Env):
             print("Invasion de linea detectada de tipo: " + str(invasion.crossed_lane_markings[0].type))
 
     def manejadorColisiones(self, colision):
-        #print("Colision detectada")
         if 0 not in self.cache:
             self.cache.append(0)
-    
+            print("Colision detectada")
     def manejarSensorObstaculos(self, obstaculo):
         if 1 not in self.cache:
             print("Obstaculo detectado")
