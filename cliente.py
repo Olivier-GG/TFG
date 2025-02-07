@@ -317,6 +317,8 @@ def destruirCocheAutonomo():
     if len(listaCocheAutonomo) > 0:
         print(len(listaCocheAutonomo))
         #Se elimina la lista al reves para eliminar primero los sensores y despues el coche autonomo
+        listaCocheAutonomo[0].apply_control(carla.VehicleControl(throttle=0.0, brake=1.0))
+        time.sleep(0.1)
         listaCocheAutonomo[1].stop()
         listaCocheAutonomo[2].stop()
         listaCocheAutonomo[3].stop()
