@@ -468,12 +468,13 @@ class CarlaEnv(gym.Env):
             print("Invasion de linea detectada de tipo: " + str(invasion.crossed_lane_markings[0].type))
 
     def manejadorColisiones(self, colision):
-        self.sensorColision.stop()
-        self.sensorColision.destroy()
-        listaActores.remove(self.sensorColision)
-        self.sensorColision = None
-        self.cache.append(0)
-        print("Colision detectada")
+        if self.sensorColision is not None:
+            self.sensorColision.stop()
+            self.sensorColision.destroy()
+            listaActores.remove(self.sensorColision)
+            self.sensorColision = None
+            self.cache.append(0)
+            print("Colision detectada")
 
     def manejarSensorObstaculos(self, obstaculo):
         if 1 not in self.cache:
