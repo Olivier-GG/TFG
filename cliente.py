@@ -201,9 +201,8 @@ def main () :
         
         cliente = carla.Client('localhost', 2000)
         cliente.set_timeout(5.0)
-        cliente.load_world('Town01')
+        #cliente.load_world('Town01')
         world = cliente.get_world()
-        #enviroment = cliente.load_world('Town01')
         blueprint_library = world.get_blueprint_library()
 
         #Incializamos el entorno de gym
