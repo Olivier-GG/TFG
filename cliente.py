@@ -471,6 +471,7 @@ class CarlaEnv(gym.Env):
         self.sensorColision.stop()
         self.sensorColision.destroy()
         listaActores.remove(self.sensorColision)
+        self.sensorColision = None
         self.cache.append(0)
         print("Colision detectada")
 
