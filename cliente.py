@@ -36,7 +36,6 @@ listaNPC = [] #Se añaden todos los sensores de los NPC y los NPC para poder ser
 
 
 
-
 # ||||||| Funcion para spawnear el coche autonomo y añadirle los sensores necesarios ||||||||||
 
 def spawnearVehiculoAutonomo (world, blueprint_library, cache, env): #Se le pasa el mundo y la libreria de blueprints para poder spawnear los actores 
@@ -117,7 +116,7 @@ def spawnearVehiculoAutonomo (world, blueprint_library, cache, env): #Se le pasa
 
     #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
     camara.listen(lambda image: env.manejarSensorCamara(world, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
-    sensorColision.listen(lambda colision: env.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision
+    #sensorColision.listen(lambda colision: env.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision
     sensorInvasion.listen(lambda invasion: env.manejarSensorLinea(invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
     sensorObstaculos.listen(lambda obstaculo: env.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
     if sensorColision is None or sensorInvasion is None or sensorObstaculos is None:
@@ -364,16 +363,20 @@ class CarlaEnv(gym.Env):
         self.cliente = client
         self.world = self.cliente.get_world()
         self.blueprint_library = self.world.get_blueprint_library()
-        self.cocheAutonomo = None
         self.cache = []
+        self.cocheAutonomo = spawnearVehiculoAutonomo(self.world, self.blueprint_library, self.cache, self)
+        self.ultColx = 0
+        self.ultColy = 0
+        self.sensorColision = None
+        
         
         self.action_space = spaces.Discrete(10)  # Puede ser aceleración, frenado, dirección, etc.
         self.observation_space = spaces.Discrete(6) # Todas las combinaciones de los  (linea y obstaculos), porque el de colisión es para acabar el episodio
 
 
     def reset(self):
-        destruirCocheAutonomo()
-        self.cocheAutonomo = spawnearVehiculoAutonomo(self.world, self.blueprint_library, self.cache, self)
+        
+        self.moverCochePosicionIncial()
         if self.cocheAutonomo is None:
             raise ValueError("Error al spawnear el vehículo autónomo")
         return self.get_observation() #Devuelve informacion al final de cada episodio
@@ -465,9 +468,11 @@ class CarlaEnv(gym.Env):
             print("Invasion de linea detectada de tipo: " + str(invasion.crossed_lane_markings[0].type))
 
     def manejadorColisiones(self, colision):
-        if 0 not in self.cache:
-            self.cache.append(0)
-            print("Colision detectada")
+        self.sensorColision.stop()
+        self.sensorColision.destroy()
+        listaActores.remove(self.sensorColision)
+        self.cache.append(0)
+        print("Colision detectada")
 
     def manejarSensorObstaculos(self, obstaculo):
         if 1 not in self.cache:
@@ -480,7 +485,18 @@ class CarlaEnv(gym.Env):
             spectator.set_transform(carla.Transform(transform.location + carla.Location(z=50),
             carla.Rotation(pitch=-90)))
         
-
+    def moverCochePosicionIncial(self):
+        if self.cocheAutonomo is not None:
+            self.cocheAutonomo.set_transform(self.world.get_map().get_spawn_points()[0])
+            time.sleep(1)
+            #setear sensor de colision
+            self.sensorColision = self.blueprint_library.find('sensor.other.collision')
+            self.sensorColision = self.world.try_spawn_actor(self.sensorColision, carla.Transform(), attach_to=self.cocheAutonomo)
+            listaActores.append(self.sensorColision)
+            self.sensorColision.listen(lambda colision: self.manejadorColisiones(colision))
+            print("Coche autonomo movido a la posicion inicial")
+        
+            
 
 # |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 # |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
