@@ -225,7 +225,7 @@ def main () :
         n_eval_episodes = 100        # Total number of test episodes
 
         # Environment parameters
-        max_steps = 150            # Max steps per episode
+        max_steps = 30            # Max steps per episode
         gamma = 0.95                 # Discounting rate
         eval_seed = []               # The evaluation seed of the environment
 
@@ -368,6 +368,8 @@ class CarlaEnv(gym.Env):
         self.ultColx = 0
         self.ultColy = 0
         self.sensorColision = None
+        self.sensorColisionOld = None
+        self.sensorColisionb = self.blueprint_library.find('sensor.other.collision')
         
         
         self.action_space = spaces.Discrete(10)  # Puede ser aceleración, frenado, dirección, etc.
@@ -377,8 +379,6 @@ class CarlaEnv(gym.Env):
     def reset(self):
         
         self.moverCochePosicionIncial()
-        if self.cocheAutonomo is None:
-            raise ValueError("Error al spawnear el vehículo autónomo")
         return self.get_observation() #Devuelve informacion al final de cada episodio
 
     def step(self, action):
@@ -469,10 +469,6 @@ class CarlaEnv(gym.Env):
 
     def manejadorColisiones(self, colision):
         if self.sensorColision is not None:
-            self.sensorColision.stop()
-            self.sensorColision.destroy()
-            listaActores.remove(self.sensorColision)
-            self.sensorColision = None
             self.cache.append(0)
             print("Colision detectada")
 
@@ -489,12 +485,15 @@ class CarlaEnv(gym.Env):
         
     def moverCochePosicionIncial(self):
         if self.cocheAutonomo is not None:
+            if self.sensorColision is not None:
+                self.sensorColisionOld = self.sensorColision
+                self.sensorColisionOld.stop()
+                self.sensorColisionOld.destroy()
+            time.sleep(1)
             self.cocheAutonomo.set_transform(self.world.get_map().get_spawn_points()[0])
             time.sleep(1)
             #setear sensor de colision
-            self.sensorColision = self.blueprint_library.find('sensor.other.collision')
-            self.sensorColision = self.world.try_spawn_actor(self.sensorColision, carla.Transform(), attach_to=self.cocheAutonomo)
-            listaActores.append(self.sensorColision)
+            self.sensorColision = self.world.try_spawn_actor(self.sensorColisionb, carla.Transform(), attach_to=self.cocheAutonomo)
             self.sensorColision.listen(lambda colision: self.manejadorColisiones(colision))
             print("Coche autonomo movido a la posicion inicial")
         
