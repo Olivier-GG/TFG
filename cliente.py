@@ -5,7 +5,6 @@ import random
 from spawn_npc import spawnearCoches
 from spawnearNPC import Spawn
 import numpy as np
-import carla
 import glob
 import os
 import sys
@@ -27,6 +26,7 @@ except IndexError:
     pass
 
 
+import carla
 
 # |||||| Listas con todos los actores ||||||||
 
@@ -199,8 +199,8 @@ def main () :
         #|||| Paso 1, conectar el cliente con el servidor
         
         cliente = carla.Client('localhost', 2000)
-        cliente.set_timeout(5.0)
-        #cliente.load_world('Town01')
+        cliente.set_timeout(10.0)
+        cliente.load_world('Town03')
         world = cliente.get_world()
         blueprint_library = world.get_blueprint_library()
 
@@ -219,20 +219,20 @@ def main () :
 
         # Training parameters
         n_training_episodes = 1000  # Total training episodes
-        learning_rate = 0.1          # Learning rate
+        learning_rate = 0.2         # Learning rate
 
         # Evaluation parameters
         n_eval_episodes = 100        # Total number of test episodes
 
         # Environment parameters
-        max_steps = 30            # Max steps per episode
+        max_steps = 100          # Max steps per episode
         gamma = 0.95                 # Discounting rate
         eval_seed = []               # The evaluation seed of the environment
 
         # Exploration parameters
         max_epsilon = 1.0             # Exploration probability at start
         min_epsilon = 0.05            # Minimum exploration probability
-        decay_rate = 0.0005            # Exponential decay rate for exploration prob
+        decay_rate = 0.0025            # Exponential decay rate for exploration prob
 
         #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
@@ -470,6 +470,7 @@ class CarlaEnv(gym.Env):
     def manejadorColisiones(self, colision):
         if self.sensorColision is not None:
             self.cache.append(0)
+            self.sensorColision.stop()
             print("Colision detectada")
 
     def manejarSensorObstaculos(self, obstaculo):
@@ -484,18 +485,18 @@ class CarlaEnv(gym.Env):
             carla.Rotation(pitch=-90)))
         
     def moverCochePosicionIncial(self):
+        print("Moviendo coche a la posicion inicial")
         if self.cocheAutonomo is not None:
             if self.sensorColision is not None:
                 self.sensorColisionOld = self.sensorColision
-                self.sensorColisionOld.stop()
                 self.sensorColisionOld.destroy()
             time.sleep(1)
             self.cocheAutonomo.set_transform(self.world.get_map().get_spawn_points()[0])
-            time.sleep(1)
+            time.sleep(2)
             #setear sensor de colision
             self.sensorColision = self.world.try_spawn_actor(self.sensorColisionb, carla.Transform(), attach_to=self.cocheAutonomo)
             self.sensorColision.listen(lambda colision: self.manejadorColisiones(colision))
-            print("Coche autonomo movido a la posicion inicial")
+            
         
             
 
