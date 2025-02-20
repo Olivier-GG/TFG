@@ -8,6 +8,7 @@ import carla
 import time
 import cv2
 import random
+import math
 
 # Encontrar modulo de carla
 try:
@@ -31,10 +32,12 @@ class CarlaEnv(gym.Env):
         self.sensorColision = None
         self.sensorColisionOld = None
         self.sensorColisionb = self.blueprint_library.find('sensor.other.collision')
-        
+        self.posicionInicial = self.world.get_map().get_spawn_points()[0]
+        self.ultimaPosicion = None
+        self.VelocidadVehiculo = 0
         
         self.action_space = spaces.Discrete(10)  # Puede ser aceleración, frenado, dirección, etc.
-        self.observation_space = spaces.Discrete(6) # Todas las combinaciones de los  (linea y obstaculos), porque el de colisión es para acabar el episodio
+        self.observation_space = spaces.Discrete(16) # Todas las combinaciones de los  (linea y obstaculos), porque el de colisión es para acabar el episodio
 
 
     def reset(self):
@@ -76,14 +79,14 @@ class CarlaEnv(gym.Env):
         done = self.terminated()  # Lógica para determinar cuándo se acaba el episodio
         
         
-        """
+        
         # Devolver la información necesaria para el aprendizaje
         
         print("")
         print("Estado: " + info)
         print("Recompensa: " + str(reward))
         print(self.cache) # Para ir viendo como va el entorno
-        """
+        
 
         self.cache = [] #Vaciamos la cache para que no se acumulen los datos
         
@@ -91,20 +94,68 @@ class CarlaEnv(gym.Env):
         return info, state, reward, done
 
     def get_observation(self):
-        
-        if 1 in self.cache and 2 not in self.cache and 3 not in self.cache:
-            return "obstaculo detectado, S5", 5
-        elif 1 not in self.cache and 2 in self.cache and 3 not in self.cache:
-            return "linea continua detectada, S4", 4
-        elif 1 not in self.cache and 2 not in self.cache and 3 in self.cache:
-            return "linea discontinua detectada, S3", 3
-        elif 1 in self.cache and 2 in self.cache and 3 not in self.cache:
-            return "obstaculo y linea continua detectada, S2", 2
-        elif 1 in self.cache and 2 not in self.cache and 3 in self.cache:
-            return "obstaculo y linea discontinua detectada, S1", 1
-        else:
-            return "Todo correcto S0", 0
 
+        self.VelocidadVehiculo = math.sqrt(self.cocheAutonomo.get_velocity().x**2 + self.cocheAutonomo.get_velocity().y**2) # Esta en m/s
+        
+        if 1 in self.cache:
+
+            if self.VelocidadVehiculo <= 0.5:
+                return "obstaculo detectado, Parado, S5", 0
+            elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
+                return "obstaculo detectado, < 10kmh, S6", 1
+            elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
+                return "obstaculo detectado, 10 < 30, S7", 2
+            else:
+                return "obstaculo detectado, >30 , S8", 3
+        
+        elif 2 in self.cache:
+
+            if self.VelocidadVehiculo <= 0.5:
+                return "linea continua detectada, Parado, S5", 4
+            elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
+                return "linea continua detectada, < 10kmh, S6", 5
+            elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
+                return "linea continua detectada, 10 < 30, S7", 6
+            else:
+                return "linea continua detectada, >30 , S8", 7
+        
+        elif 3 in self.cache:
+
+            if self.VelocidadVehiculo <= 0.5:
+                return "linea discontinua detectada, Parado, S5", 8
+            elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
+                return "linea discontinua detectada, < 10kmh, S6", 9
+            elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
+                return "linea discontinua detectada, 10 < 30, S7", 10
+            else:
+                return "linea discontinua detectada, >30 , S8", 11
+        
+        else:
+
+            if self.VelocidadVehiculo <= 0.5:
+                return "Todo correcto, Parado, S5", 12
+            elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
+                return "Todo correcto, < 10kmh, S6", 13
+            elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
+                return "Todo correcto, 10 < 30, S7", 14
+            else:
+                return "Todo correcto, >30 , S8", 15
+
+
+    def calcularRecompensa(self):
+
+        acu = self.cocheAutonomo.get_location().distance(self.ultimaPosicion) * 2
+
+        for elemento in self.cache:
+            if elemento == 2:
+                acu -= 5
+            elif elemento == 3:
+                acu -= 1
+            elif elemento == 0:
+                acu -= 30
+
+        self.ultimaPosicion = self.cocheAutonomo.get_location()
+        return acu
 
     def render(self, mode='human'):
         # Renderizar el entorno para visualizarlo (si es necesario)
@@ -125,23 +176,14 @@ class CarlaEnv(gym.Env):
         else:
             return False
 
-    def calcularRecompensa(self):
-        acu = 0
-        for elemento in self.cache:
-            if elemento == 2:
-                acu -= 1
-            elif elemento == 3:
-                acu -= 1
-        return acu
-
     
     #||||||||||||||||||||||||||||||||||||||||||||||||||||||||
     #Funciones para manejar los sensores del coche autonomo
 
     def manejarSensorLinea(self, invasion):
         if 2 not in self.cache and 3 not in self.cache:
-            if "Solid" in str(invasion.crossed_lane_markings[0].type):
-                self.cache.append(2) # Para lineas continuas y continuas con discontinuas
+            if "Solid" in str(invasion.crossed_lane_markings[0].type) or "Grass" in str(invasion.crossed_lane_markings[0].type) or "Curb" in str(invasion.crossed_lane_markings[0].type): 
+                self.cache.append(2) # Para todo tipo de linea que no se deberia de poder cruzar, ya sea cualquier tipo de continua o bordillo o hierba
             else:
                 self.cache.append(3) # Para lineas discontinuas
             print("Invasion de linea detectada de tipo: " + str(invasion.crossed_lane_markings[0].type))
@@ -181,18 +223,22 @@ class CarlaEnv(gym.Env):
     #Setter coche autonomo
     def setCocheAutonomo(self, vehiculo):
         self.cocheAutonomo = vehiculo
+        self.ultimaPosicion = self.cocheAutonomo.get_location()
 
     #Funcion que mueve el coche a la posicion inicial y setea el sensor de colision
     def moverCochePosicionIncial(self):
         print("Moviendo coche a la posicion inicial")
+        #self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0)) # Frenamos el coche
+        self.cocheAutonomo.set_simulate_physics(False)
         if self.cocheAutonomo is not None:
             if self.sensorColision is not None: #Si hay un sensor de colision lo destruimos
                 self.sensorColisionOld = self.sensorColision
                 self.sensorColisionOld.destroy()
-            time.sleep(1)
+            time.sleep(0.5)
             self.cocheAutonomo.set_transform(self.world.get_map().get_spawn_points()[0])
             time.sleep(1)
             #setear sensor de colision
+            self.cocheAutonomo.set_simulate_physics(True)
             self.sensorColision = self.world.try_spawn_actor(self.sensorColisionb, carla.Transform(), attach_to=self.cocheAutonomo) # Añadimos el sensor de colisiones desde aqui porque sino causa problemas
             self.sensorColision.listen(lambda colision: self.manejadorColisiones(colision))
             

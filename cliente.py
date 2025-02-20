@@ -217,15 +217,15 @@ def main () :
         #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
 
         # Training parameters
-        n_training_episodes = 1000  # Total training episodes
-        learning_rate = 0.2         # Learning rate
+        n_training_episodes = 3000  # Total training episodes
+        learning_rate = 0.05         # Learning rate
 
         # Evaluation parameters
         n_eval_episodes = 100        # Total number of test episodes
 
         # Environment parameters
-        max_steps = 200          # Max steps per episode
-        gamma = 0.95                 # Discounting rate
+        max_steps = 200              # Max steps per episode
+        gamma = 0.3                 # Discounting rate
         eval_seed = []               # The evaluation seed of the environment
 
         # Exploration parameters
