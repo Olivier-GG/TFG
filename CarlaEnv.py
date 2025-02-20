@@ -40,6 +40,7 @@ class CarlaEnv(gym.Env):
     def reset(self):
         
         self.moverCochePosicionIncial()
+        self.cache = [] #Limpiamos la cache por si acaso
         return self.get_observation() #Devuelve informacion al final de cada episodio
 
     def step(self, action):
@@ -111,6 +112,11 @@ class CarlaEnv(gym.Env):
 
     def close(self):
         # Limpiar y cerrar los recursos al finalizar
+        self.sensorColision.stop()
+        self.sensorColision.destroy()
+        if self.sensorColisionOld.is_alive:
+            self.sensorColisionOld.stop()
+            self.sensorColisionOld.destroy()
         print("Cerrando entorno")
 
     def terminated(self):
@@ -128,6 +134,8 @@ class CarlaEnv(gym.Env):
                 acu -= 1
         return acu
 
+    
+    #||||||||||||||||||||||||||||||||||||||||||||||||||||||||
     #Funciones para manejar los sensores del coche autonomo
 
     def manejarSensorLinea(self, invasion):
@@ -140,7 +148,7 @@ class CarlaEnv(gym.Env):
 
     def manejadorColisiones(self, colision):
         if self.sensorColision is not None:
-            self.cache.append(0)
+            self.cache.append(0) #Hacemos que el sensor deje de registrar colisiones(Produce ciertos bugs)
             self.sensorColision.stop()
             print("Colision detectada")
 
@@ -155,21 +163,7 @@ class CarlaEnv(gym.Env):
             spectator.set_transform(carla.Transform(transform.location + carla.Location(z=50),
             carla.Rotation(pitch=-90)))
         
-    def moverCochePosicionIncial(self):
-        print("Moviendo coche a la posicion inicial")
-        if self.cocheAutonomo is not None:
-            if self.sensorColision is not None:
-                self.sensorColisionOld = self.sensorColision
-                self.sensorColisionOld.destroy()
-            time.sleep(1)
-            self.cocheAutonomo.set_transform(self.world.get_map().get_spawn_points()[0])
-            time.sleep(2)
-            #setear sensor de colision
-            self.sensorColision = self.world.try_spawn_actor(self.sensorColisionb, carla.Transform(), attach_to=self.cocheAutonomo)
-            self.sensorColision.listen(lambda colision: self.manejadorColisiones(colision))
-            
     #Va un poco lagado entonces no lo utilizo, dejas para hacer video futuro
-
     def procesarImagen(self, imagen): #Para que se vea como circula el coche
         imagen = np.array(imagen.raw_data)
         img = imagen.reshape((600,800,4))
@@ -178,7 +172,32 @@ class CarlaEnv(gym.Env):
         cv2.imshow("", img2)
         cv2.waitKey(100)
 
+
+
+    #|||||||||||||||||||||||||||||||||||||||||||||||||||||||
+    #Funciones auxiliares
+    #|||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+    #Setter coche autonomo
     def setCocheAutonomo(self, vehiculo):
         self.cocheAutonomo = vehiculo
+
+    #Funcion que mueve el coche a la posicion inicial y setea el sensor de colision
+    def moverCochePosicionIncial(self):
+        print("Moviendo coche a la posicion inicial")
+        if self.cocheAutonomo is not None:
+            if self.sensorColision is not None: #Si hay un sensor de colision lo destruimos
+                self.sensorColisionOld = self.sensorColision
+                self.sensorColisionOld.destroy()
+            time.sleep(1)
+            self.cocheAutonomo.set_transform(self.world.get_map().get_spawn_points()[0])
+            time.sleep(1)
+            #setear sensor de colision
+            self.sensorColision = self.world.try_spawn_actor(self.sensorColisionb, carla.Transform(), attach_to=self.cocheAutonomo) # Añadimos el sensor de colisiones desde aqui porque sino causa problemas
+            self.sensorColision.listen(lambda colision: self.manejadorColisiones(colision))
+            
+
+
+    
         
             

@@ -43,12 +43,8 @@ listaNPC = [] #Se añaden todos los sensores de los NPC y los NPC para poder ser
 def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mundo y la libreria de blueprints para poder spawnear los actores 
 
     print("Empezamos a spawnear el coche autonomo")
-    #Donde vamos a respawnear el coche
-    #transform = world.get_map().get_spawn_points()[0]
-    #transform = random.choice(world.get_map().get_spawn_points())# para que el sitio de respawn sea random
-    #Spawneamos el vehiculo
-    #vehiculoAutonomo = world.spawn_actor(blueprint_library.filter('vehicle.*.*')[0], transform)
 
+    #Comenzamos spawneado el vehículo, en caso de que no se pueda spawnear en el punto deseado se intentará en otro
     vehiculoAutonomo = None
     for transform in world.get_map().get_spawn_points():
         vehiculoAutonomo = world.try_spawn_actor(blueprint_library.filter('vehicle.*.*')[0], transform)
@@ -60,12 +56,10 @@ def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mun
 
     listaActores.append(vehiculoAutonomo)
     listaCocheAutonomo.append(vehiculoAutonomo)
-    if vehiculoAutonomo is None:
-        print("No se ha podido spawnear el vehiculo autonomo")
-        return None
-    else:
-        print("coche autonomo spawneado")
+
+    #||||||||||||||||||||||||||||
     #|||||||| Sensores ||||||||||
+    #||||||||||||||||||||||||||||
 
     #Spawneamos camara para ver vehiculo
     camarab = blueprint_library.find('sensor.camera.rgb')
@@ -80,6 +74,8 @@ def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mun
         return None
     else:
         print("Camara spawneada")
+
+
     #Spawneamos sensor de colision
     sensorColisionb = blueprint_library.find('sensor.other.collision')
     sensorColision = world.try_spawn_actor(sensorColisionb, carla.Transform(), attach_to=vehiculoAutonomo)
@@ -90,6 +86,8 @@ def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mun
         return None
     else:
         print("Sensor de colision spawneado")
+
+
     #Spawneamos sensor de invasion de linea
     sensorInvasionb = blueprint_library.find('sensor.other.lane_invasion')
     sensorInvasion = world.try_spawn_actor(sensorInvasionb, carla.Transform(), attach_to=vehiculoAutonomo)
@@ -100,6 +98,8 @@ def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mun
         return None
     else:
         print("Sensor de invasion de linea spawneado")
+
+
     #Spawneamos sensor de obstaculos
     sensorObstaculosb = blueprint_library.find('sensor.other.obstacle')
     sensorObstaculosb.set_attribute('distance', '15')
@@ -114,6 +114,10 @@ def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mun
         return None
     else:
         print("Sensor de obstaculos spawneado")
+
+
+
+    #||||||||||||||||||||||
     #Activamos los sensores
 
     #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
@@ -121,11 +125,8 @@ def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mun
     #sensorColision.listen(lambda colision: env.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision
     sensorInvasion.listen(lambda invasion: env.manejarSensorLinea(invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
     sensorObstaculos.listen(lambda obstaculo: env.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-    if sensorColision is None or sensorInvasion is None or sensorObstaculos is None:
-        print("No se han podido activar los sensores")
-        return None
-    else:
-        print("Vehiculo con sensores spawneado")
+   
+
 
     return vehiculoAutonomo
 
@@ -154,6 +155,11 @@ def initialize_q_table(state_space, action_space):
   Qtable = np.zeros((state_space, action_space))
   return Qtable
 
+
+
+#|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+#Funciones para la political de exploracion y explotacion
+
 def greedy_policy(Qtable, state):
   # Exploitation: take the action with the highest state, action value
   action = np.argmax(Qtable[state][:])
@@ -177,6 +183,9 @@ def epsilon_greedy_policy(Qtable, state, epsilon, env):
 
 
 
+#||||||||||||||||||||||||||||||||||||||||||||||||
+#||||||||||||||||||||||||||||||||||||||||||||||||
+#||||||||||||||||||||||||||||||||||||||||||||||||
 # |||||||||||||| MAIN |||||||||||||||||
 def main () :
 
@@ -186,15 +195,14 @@ def main () :
         
         cliente = carla.Client('localhost', 2000)
         cliente.set_timeout(10.0)
-        cliente.load_world('Town03')
+        cliente.load_world('Town03') #Cargamos la cuidad que deseemos
         world = cliente.get_world()
         blueprint_library = world.get_blueprint_library()
 
         #Incializamos el entorno de gym
         env = CarlaEnv(cliente)
-        vehiculo = spawnearVehiculoAutonomo(world, blueprint_library, env)
+        vehiculo = spawnearVehiculoAutonomo(world, blueprint_library, env) # Se le pasa el enviromental para poder manejar los sensores
         env.setCocheAutonomo(vehiculo)
-
 
         state_space = env.observation_space.n
         action_space = env.action_space.n
@@ -203,6 +211,8 @@ def main () :
         Qtable = initialize_q_table(state_space, action_space)
 
         print("Conexion con el servidor establecida y todas las variables principales inicializadas")
+
+
 
         #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
 
@@ -214,7 +224,7 @@ def main () :
         n_eval_episodes = 100        # Total number of test episodes
 
         # Environment parameters
-        max_steps = 100          # Max steps per episode
+        max_steps = 200          # Max steps per episode
         gamma = 0.95                 # Discounting rate
         eval_seed = []               # The evaluation seed of the environment
 
@@ -226,6 +236,8 @@ def main () :
         #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 
+
+
         #||||| Paso 2, Spawneo de trafico para poder realizar la simulacion ||||||||
     
         #print("\nProcedo a spawnear 30 coches y 10 peatones")
@@ -233,9 +245,10 @@ def main () :
         #listaNPC.extend(spawnearCoches(30,10)) 
         #listaActores.extend(Spawn(enviroment,blueprint_library,10,10)) #Codigo hecho por mi
 
+
         #|||| Paso 3, comienza el entrenamiento ||||||||||
-        
-        print("               Comenzando el entrenamiento        ")
+        print("\n\n\n")
+        print("               Comenzando el entrenamiento        \n")
 
         for episode in range(n_training_episodes):
             # Reduce epsilon (because we need less and less exploration)
@@ -259,7 +272,7 @@ def main () :
 
             # repeat
             for step in range(max_steps):
-                # Choose the action At using epsilon greedy policy
+                # Elegimos la accion segun nuestra politica
                 time.sleep(0.25) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
                 action = epsilon_greedy_policy(Qtable, state, epsilon, env)
                 #print( "Action: " + str(action))
@@ -277,6 +290,9 @@ def main () :
                 # Our next state is the new state
                 state = new_state
 
+        env.close()
+        print("Enviroment cerrado")
+
 
     except KeyboardInterrupt:
         destruirActores()
@@ -287,6 +303,13 @@ def main () :
 
 
 
+
+
+# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 # |||||||||| Funciones para destruir los actores ||||||||||
 
 def destruirNPC():
@@ -311,14 +334,12 @@ def destruirCocheAutonomo():
         listaCocheAutonomo[3].stop()
         listaCocheAutonomo[4].stop()
         for elemento in listaCocheAutonomo:
-            correcto = elemento.destroy()
-            if correcto:
-                print("Elemento destruido")
+            elemento.destroy()
             if elemento in listaActores:
                 listaActores.remove(elemento)
 
         listaCocheAutonomo.clear()
-        time.sleep(3)#Tiempo de precaución antes de respawnear otro coche
+        time.sleep(2)#Tiempo de precaución
         
         print("Se ha vaciado la lista de todos los sensores y el coche autonomo")
     else:
@@ -326,30 +347,15 @@ def destruirCocheAutonomo():
 
 def destruirActores():
     if len(listaActores) > 0:
-        for actor in reversed(listaActores):
-            actor.destroy()
+        for actor in listaActores:
+            if actor.is_alive:
+                actor.destroy()
             if actor in listaCocheAutonomo:
                 listaCocheAutonomo.remove(actor)
         listaActores.clear()
         print("Se ha vaciado toda la lista de actores")
     else:
         print("No hay ningun actor para destruir")
-
-
-
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
-# |||||| Clase para crear el entorno de gym ||||||||||
-
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 
 
