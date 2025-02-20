@@ -13,8 +13,10 @@ import tqdm
 from typing_extensions import Literal
 import pdb
 import json
+import cv2
 import gymnasium as gym
 from gymnasium import spaces
+from CarlaEnv import CarlaEnv
 
 # Encontrar modulo de carla
 try:
@@ -38,7 +40,7 @@ listaNPC = [] #Se añaden todos los sensores de los NPC y los NPC para poder ser
 
 # ||||||| Funcion para spawnear el coche autonomo y añadirle los sensores necesarios ||||||||||
 
-def spawnearVehiculoAutonomo (world, blueprint_library, cache, env): #Se le pasa el mundo y la libreria de blueprints para poder spawnear los actores 
+def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mundo y la libreria de blueprints para poder spawnear los actores 
 
     print("Empezamos a spawnear el coche autonomo")
     #Donde vamos a respawnear el coche
@@ -131,22 +133,6 @@ def spawnearVehiculoAutonomo (world, blueprint_library, cache, env): #Se le pasa
 
 
 
-# |||||| Todas funciones para procesar las información de los sensores ||||||||
-
-"""""""""
-#Va un poco lagado entonces no lo utilizo, dejas para hacer video futuro
-
-def procesarImagen(imagen): #Para que se vea como circula el coche
-    imagen = np.array(imagen.raw_data)
-    img = imagen.reshape((600,800,4))
-    img2 = img[:,:,:3]
-
-    cv2.imshow("", img2)
-    cv2.waitKey(100)
-
-"""""""""
-
-
 # |||||||| Funciones auxiliares ||||||||||
 
 # Guardar en JSON
@@ -206,6 +192,9 @@ def main () :
 
         #Incializamos el entorno de gym
         env = CarlaEnv(cliente)
+        vehiculo = spawnearVehiculoAutonomo(world, blueprint_library, env)
+        env.setCocheAutonomo(vehiculo)
+
 
         state_space = env.observation_space.n
         action_space = env.action_space.n
@@ -355,150 +344,6 @@ def destruirActores():
 # |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
 # |||||| Clase para crear el entorno de gym ||||||||||
-
-class CarlaEnv(gym.Env):
-    def __init__(self, client):
-        super(CarlaEnv, self).__init__()
-
-        self.cliente = client
-        self.world = self.cliente.get_world()
-        self.blueprint_library = self.world.get_blueprint_library()
-        self.cache = []
-        self.cocheAutonomo = spawnearVehiculoAutonomo(self.world, self.blueprint_library, self.cache, self)
-        self.ultColx = 0
-        self.ultColy = 0
-        self.sensorColision = None
-        self.sensorColisionOld = None
-        self.sensorColisionb = self.blueprint_library.find('sensor.other.collision')
-        
-        
-        self.action_space = spaces.Discrete(10)  # Puede ser aceleración, frenado, dirección, etc.
-        self.observation_space = spaces.Discrete(6) # Todas las combinaciones de los  (linea y obstaculos), porque el de colisión es para acabar el episodio
-
-
-    def reset(self):
-        
-        self.moverCochePosicionIncial()
-        return self.get_observation() #Devuelve informacion al final de cada episodio
-
-    def step(self, action):
-        # Convertir la acción en un comando para el coche (ejemplo, movimiento)
-        if action == 0:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=1.0, steer=0.0)) #Acelerar
-        elif action == 1:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.5, steer=0.0)) #Acelerar 
-        elif action == 2:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=0.75)) #Girar 
-        elif action == 3:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=0.5)) #Girar 
-        elif action == 4:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=0.25)) #Girar 
-        elif action == 5:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-1.0)) #Girar 
-        elif action == 6:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-0.75)) #Girar 
-        elif action == 7:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-0.5)) #Girar 
-        elif action == 8:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=-0.5, steer=0.0)) #Frenar 
-        else:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=-1.0, steer=0.0)) #Frenar
-
-        # Obtener la observación actual (por ejemplo, imagen de la cámara)
-        info, state = self.get_observation()
-
-        # Calcular la recompensa (esto depende de tu objetivo específico)
-        reward = self.calcularRecompensa()  # Aquí va la lógica de recompensa, ejemplo simple
-        #print("Recompensa: " + str(reward))
-        # Verificar si el episodio ha terminado (por ejemplo, si el coche ha chocado)
-        done = self.terminated()  # Lógica para determinar cuándo se acaba el episodio
-
-        #print(self.cache) # Para ir viendo como va el entorno
-        self.cache = [] #Vaciamos la cache para que no se acumulen los datos
-
-        return info, state, reward, done
-
-    def get_observation(self):
-        
-        if 1 in self.cache and 2 not in self.cache and 3 not in self.cache:
-            return "obstaculo detectado, S5", 5
-        elif 1 not in self.cache and 2 in self.cache and 3 not in self.cache:
-            return "linea continua detectada, S4", 4
-        elif 1 not in self.cache and 2 not in self.cache and 3 in self.cache:
-            return "linea discontinua detectada, S3", 3
-        elif 1 in self.cache and 2 in self.cache and 3 not in self.cache:
-            return "obstaculo y linea continua detectada, S2", 2
-        elif 1 in self.cache and 2 not in self.cache and 3 in self.cache:
-            return "obstaculo y linea discontinua detectada, S1", 1
-        else:
-            return "Todo correcto S0", 0
-
-
-    def render(self, mode='human'):
-        # Renderizar el entorno para visualizarlo (si es necesario)
-        pass
-
-    def close(self):
-        # Limpiar y cerrar los recursos al finalizar
-        destruirActores()
-
-    def terminated(self):
-        if 0 in self.cache:
-            return True
-        else:
-            return False
-
-    def calcularRecompensa(self):
-        acu = 0
-        for elemento in self.cache:
-            if elemento == 2:
-                acu -= 1
-            elif elemento == 3:
-                acu -= 1
-        return acu
-
-    #Funciones para manejar los sensores del coche autonomo
-
-    def manejarSensorLinea(self, invasion):
-        if 2 not in self.cache and 3 not in self.cache:
-            if "Solid" in str(invasion.crossed_lane_markings[0].type):
-                self.cache.append(2) # Para lineas continuas y continuas con discontinuas
-            else:
-                self.cache.append(3) # Para lineas discontinuas
-            print("Invasion de linea detectada de tipo: " + str(invasion.crossed_lane_markings[0].type))
-
-    def manejadorColisiones(self, colision):
-        if self.sensorColision is not None:
-            self.cache.append(0)
-            self.sensorColision.stop()
-            print("Colision detectada")
-
-    def manejarSensorObstaculos(self, obstaculo):
-        if 1 not in self.cache:
-            print("Obstaculo detectado")
-            self.cache.append(1)    
-
-    def manejarSensorCamara(self, world, vehicle):
-            spectator = world.get_spectator()
-            transform = vehicle.get_transform()
-            spectator.set_transform(carla.Transform(transform.location + carla.Location(z=50),
-            carla.Rotation(pitch=-90)))
-        
-    def moverCochePosicionIncial(self):
-        print("Moviendo coche a la posicion inicial")
-        if self.cocheAutonomo is not None:
-            if self.sensorColision is not None:
-                self.sensorColisionOld = self.sensorColision
-                self.sensorColisionOld.destroy()
-            time.sleep(1)
-            self.cocheAutonomo.set_transform(self.world.get_map().get_spawn_points()[0])
-            time.sleep(2)
-            #setear sensor de colision
-            self.sensorColision = self.world.try_spawn_actor(self.sensorColisionb, carla.Transform(), attach_to=self.cocheAutonomo)
-            self.sensorColision.listen(lambda colision: self.manejadorColisiones(colision))
-            
-        
-            
 
 # |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 # |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||

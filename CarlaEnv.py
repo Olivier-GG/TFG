@@ -1,10 +1,13 @@
 import glob
 import os
 import sys
-import gym
+import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
 import carla 
+import time
+import cv2
+import random
 
 # Encontrar modulo de carla
 try:
@@ -16,52 +19,91 @@ except IndexError:
     pass
 
 
-
 class CarlaEnv(gym.Env):
-    def __init__(self, cliente):
+    def __init__(self, client):
         super(CarlaEnv, self).__init__()
 
-        cliente.set_timeout(5.0)
-        enviroment = cliente.get_world()
-        #enviroment = cliente.load_world('Town01')
-        blueprint_library = enviroment.get_blueprint_library()
+        self.cliente = client
+        self.world = self.cliente.get_world()
+        self.blueprint_library = self.world.get_blueprint_library()
+        self.cache = []
+        self.cocheAutonomo = None
+        self.sensorColision = None
+        self.sensorColisionOld = None
+        self.sensorColisionb = self.blueprint_library.find('sensor.other.collision')
+        
+        
+        self.action_space = spaces.Discrete(10)  # Puede ser aceleración, frenado, dirección, etc.
+        self.observation_space = spaces.Discrete(6) # Todas las combinaciones de los  (linea y obstaculos), porque el de colisión es para acabar el episodio
 
-        self.action_space = spaces.Discrete(4)  # Puede ser aceleración, frenado, dirección, etc.
-
-        # Definir el espacio de observación (puede ser una imagen de cámara, por ejemplo)
-        self.observation_space = spaces.Box(low=0, high=255, shape=(240, 320, 3), dtype=np.uint8)
 
     def reset(self):
-        # Restablecer el coche y el entorno a un estado inicial
-        self.vehicle.set_location(carla.Location(x=0, y=0, z=1))
-        return self.get_observation()
+        
+        self.moverCochePosicionIncial()
+        return self.get_observation() #Devuelve informacion al final de cada episodio
 
     def step(self, action):
         # Convertir la acción en un comando para el coche (ejemplo, movimiento)
         if action == 0:
-            self.vehicle.apply_control(carla.VehicleControl(throttle=1.0, steer=0.0)) #Acelerar
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=1.0, steer=0.0)) #Acelerar
         elif action == 1:
-            self.vehicle.apply_control(carla.VehicleControl(throttle=0.0, steer=1.0)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.5, steer=0.0)) #Acelerar 
         elif action == 2:
-            self.vehicle.apply_control(carla.VehicleControl(throttle=0.0, steer=-1.0)) #Girar
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=0.75)) #Girar 
+        elif action == 3:
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=0.5)) #Girar 
+        elif action == 4:
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=0.25)) #Girar 
+        elif action == 5:
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-1.0)) #Girar 
+        elif action == 6:
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-0.75)) #Girar 
+        elif action == 7:
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-0.5)) #Girar 
+        elif action == 8:
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=-0.5, steer=0.0)) #Frenar 
         else:
-            self.vehicle.apply_control(carla.VehicleControl(throttle=-1.0, steer=0.0)) #Frenar
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=-1.0, steer=0.0)) #Frenar
 
         # Obtener la observación actual (por ejemplo, imagen de la cámara)
-        observation = self.get_observation()
+        info, state = self.get_observation()
 
         # Calcular la recompensa (esto depende de tu objetivo específico)
-        reward = -1  # Aquí va la lógica de recompensa, ejemplo simple
-
+        reward = self.calcularRecompensa()  # Aquí va la lógica de recompensa, ejemplo simple
+        
         # Verificar si el episodio ha terminado (por ejemplo, si el coche ha chocado)
-        done = False  # Lógica para determinar cuándo se acaba el episodio
+        done = self.terminated()  # Lógica para determinar cuándo se acaba el episodio
+        
+        
+        """
+        # Devolver la información necesaria para el aprendizaje
+        
+        print("")
+        print("Estado: " + info)
+        print("Recompensa: " + str(reward))
+        print(self.cache) # Para ir viendo como va el entorno
+        """
 
-        return observation, reward, done, {}
+        self.cache = [] #Vaciamos la cache para que no se acumulen los datos
+        
+
+        return info, state, reward, done
 
     def get_observation(self):
-        # Aquí puedes obtener una imagen de la cámara u otros datos
-        image = np.zeros((240, 320, 3), dtype=np.uint8)  # Imagen de ejemplo
-        return image
+        
+        if 1 in self.cache and 2 not in self.cache and 3 not in self.cache:
+            return "obstaculo detectado, S5", 5
+        elif 1 not in self.cache and 2 in self.cache and 3 not in self.cache:
+            return "linea continua detectada, S4", 4
+        elif 1 not in self.cache and 2 not in self.cache and 3 in self.cache:
+            return "linea discontinua detectada, S3", 3
+        elif 1 in self.cache and 2 in self.cache and 3 not in self.cache:
+            return "obstaculo y linea continua detectada, S2", 2
+        elif 1 in self.cache and 2 not in self.cache and 3 in self.cache:
+            return "obstaculo y linea discontinua detectada, S1", 1
+        else:
+            return "Todo correcto S0", 0
+
 
     def render(self, mode='human'):
         # Renderizar el entorno para visualizarlo (si es necesario)
@@ -69,4 +111,74 @@ class CarlaEnv(gym.Env):
 
     def close(self):
         # Limpiar y cerrar los recursos al finalizar
-        self.vehicle.destroy()
+        print("Cerrando entorno")
+
+    def terminated(self):
+        if 0 in self.cache:
+            return True
+        else:
+            return False
+
+    def calcularRecompensa(self):
+        acu = 0
+        for elemento in self.cache:
+            if elemento == 2:
+                acu -= 1
+            elif elemento == 3:
+                acu -= 1
+        return acu
+
+    #Funciones para manejar los sensores del coche autonomo
+
+    def manejarSensorLinea(self, invasion):
+        if 2 not in self.cache and 3 not in self.cache:
+            if "Solid" in str(invasion.crossed_lane_markings[0].type):
+                self.cache.append(2) # Para lineas continuas y continuas con discontinuas
+            else:
+                self.cache.append(3) # Para lineas discontinuas
+            print("Invasion de linea detectada de tipo: " + str(invasion.crossed_lane_markings[0].type))
+
+    def manejadorColisiones(self, colision):
+        if self.sensorColision is not None:
+            self.cache.append(0)
+            self.sensorColision.stop()
+            print("Colision detectada")
+
+    def manejarSensorObstaculos(self, obstaculo):
+        if 1 not in self.cache:
+            print("Obstaculo detectado")
+            self.cache.append(1)    
+
+    def manejarSensorCamara(self, world, vehicle):
+            spectator = world.get_spectator()
+            transform = vehicle.get_transform()
+            spectator.set_transform(carla.Transform(transform.location + carla.Location(z=50),
+            carla.Rotation(pitch=-90)))
+        
+    def moverCochePosicionIncial(self):
+        print("Moviendo coche a la posicion inicial")
+        if self.cocheAutonomo is not None:
+            if self.sensorColision is not None:
+                self.sensorColisionOld = self.sensorColision
+                self.sensorColisionOld.destroy()
+            time.sleep(1)
+            self.cocheAutonomo.set_transform(self.world.get_map().get_spawn_points()[0])
+            time.sleep(2)
+            #setear sensor de colision
+            self.sensorColision = self.world.try_spawn_actor(self.sensorColisionb, carla.Transform(), attach_to=self.cocheAutonomo)
+            self.sensorColision.listen(lambda colision: self.manejadorColisiones(colision))
+            
+    #Va un poco lagado entonces no lo utilizo, dejas para hacer video futuro
+
+    def procesarImagen(self, imagen): #Para que se vea como circula el coche
+        imagen = np.array(imagen.raw_data)
+        img = imagen.reshape((600,800,4))
+        img2 = img[:,:,:3]
+
+        cv2.imshow("", img2)
+        cv2.waitKey(100)
+
+    def setCocheAutonomo(self, vehiculo):
+        self.cocheAutonomo = vehiculo
+        
+            
