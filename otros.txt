@@ -8,6 +8,24 @@
 
 Lo siguiente es darle recompensa positiva por metros y tiempo y darle una recomepensa bastante negativa por chocar.
 
-Ya se ha cambiado de versión y hace falta comprobar estabilidad al 100%
-Despues añadir todos los tipos de lineas y organizar el código y ponerlo en varias clases
-Después añadir más estados para el vehículo y proceder al entrenamiento.
+
+Pruebo entrenarlo con los siguientes parametros, estoy en el commit Se añaden mas estados y ajustes en la recompensa
+
+        #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
+
+        # Training parameters
+        n_training_episodes = 3000  # Total training episodes
+        learning_rate = 0.05         # Learning rate
+
+        # Evaluation parameters
+        n_eval_episodes = 100        # Total number of test episodes
+
+        # Environment parameters
+        max_steps = 200              # Max steps per episode
+        gamma = 0.3                 # Discounting rate
+        eval_seed = []               # The evaluation seed of the environment
+
+        # Exploration parameters
+        max_epsilon = 1.0             # Exploration probability at start
+        min_epsilon = 0.05            # Minimum exploration probability
+        decay_rate = 0.0025            # Exponential decay rate for exploration prob

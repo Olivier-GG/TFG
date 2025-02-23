@@ -102,7 +102,7 @@ def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mun
 
     #Spawneamos sensor de obstaculos
     sensorObstaculosb = blueprint_library.find('sensor.other.obstacle')
-    sensorObstaculosb.set_attribute('distance', '15')
+    sensorObstaculosb.set_attribute('distance', '10')
     sensorObstaculosb.set_attribute('hit_radius', '4')
     sensorObstaculosb.set_attribute('only_dynamics', 'True')
     sensorObstaculosb.set_attribute('sensor_tick', '1.0')
@@ -217,14 +217,14 @@ def main () :
         #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
 
         # Training parameters
-        n_training_episodes = 3000  # Total training episodes
+        n_training_episodes = 1005  # Total training episodes
         learning_rate = 0.05         # Learning rate
 
         # Evaluation parameters
         n_eval_episodes = 100        # Total number of test episodes
 
         # Environment parameters
-        max_steps = 200              # Max steps per episode
+        max_steps = 120              # Max steps per episode
         gamma = 0.3                 # Discounting rate
         eval_seed = []               # The evaluation seed of the environment
 
@@ -329,10 +329,6 @@ def destruirCocheAutonomo():
         #Se elimina la lista al reves para eliminar primero los sensores y despues el coche autonomo
         listaCocheAutonomo[0].apply_control(carla.VehicleControl(throttle=0.0, brake=1.0))
         time.sleep(0.1)
-        listaCocheAutonomo[1].stop()
-        listaCocheAutonomo[2].stop()
-        listaCocheAutonomo[3].stop()
-        listaCocheAutonomo[4].stop()
         for elemento in listaCocheAutonomo:
             elemento.destroy()
             if elemento in listaActores:
