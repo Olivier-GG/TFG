@@ -268,7 +268,7 @@ def spawnearCoches(coches, peatones):
     # example of how to use parameters
     traffic_manager.global_percentage_speed_difference(30.0)
 
-    return list(all_actors) + vehicles_list
+    return world.get_actors(vehicles_list + all_id)
 
 
 if __name__ == '__main__':

@@ -102,8 +102,8 @@ def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mun
 
     #Spawneamos sensor de obstaculos
     sensorObstaculosb = blueprint_library.find('sensor.other.obstacle')
-    sensorObstaculosb.set_attribute('distance', '10')
-    sensorObstaculosb.set_attribute('hit_radius', '4')
+    sensorObstaculosb.set_attribute('distance', '12')
+    sensorObstaculosb.set_attribute('hit_radius', '0')
     sensorObstaculosb.set_attribute('only_dynamics', 'True')
     sensorObstaculosb.set_attribute('sensor_tick', '1.0')
     sensorObstaculos = world.try_spawn_actor(sensorObstaculosb, carla.Transform(), attach_to=vehiculoAutonomo)
@@ -194,7 +194,7 @@ def main () :
         #|||| Paso 1, conectar el cliente con el servidor
         
         cliente = carla.Client('localhost', 2000)
-        cliente.set_timeout(10.0)
+        cliente.set_timeout(15.0)
         cliente.load_world('Town03') #Cargamos la cuidad que deseemos
         world = cliente.get_world()
         blueprint_library = world.get_blueprint_library()
@@ -217,7 +217,7 @@ def main () :
         #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
 
         # Training parameters
-        n_training_episodes = 1005  # Total training episodes
+        n_training_episodes = 3005  # Total training episodes
         learning_rate = 0.05         # Learning rate
 
         # Evaluation parameters
@@ -240,9 +240,10 @@ def main () :
 
         #||||| Paso 2, Spawneo de trafico para poder realizar la simulacion ||||||||
     
-        #print("\nProcedo a spawnear 30 coches y 10 peatones")
-        #listaActores.extend(spawnearCoches(30,10)) #Codigo de ejemplo carla 
-        #listaNPC.extend(spawnearCoches(30,10)) 
+        print("\nProcedo a spawnear 30 coches y 10 peatones")
+        
+         #Codigo de ejemplo carla 
+        listaNPC.extend(spawnearCoches(30,10)) 
         #listaActores.extend(Spawn(enviroment,blueprint_library,10,10)) #Codigo hecho por mi
 
 
@@ -273,7 +274,7 @@ def main () :
             # repeat
             for step in range(max_steps):
                 # Elegimos la accion segun nuestra politica
-                time.sleep(0.25) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
+                time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
                 action = epsilon_greedy_policy(Qtable, state, epsilon, env)
                 #print( "Action: " + str(action))
                 # Take action At and observe Rt+1 and St+1
@@ -315,9 +316,8 @@ def main () :
 def destruirNPC():
     if len(listaNPC) > 0:
         for npc in listaNPC:
-            npc.destroy()
-            if npc in listaActores:
-                listaActores.remove(npc)
+            if npc.is_alive:
+                npc.destroy()
         listaNPC.clear()
         print("Se ha vaciado toda la lista de NPC")
     else:
@@ -342,8 +342,9 @@ def destruirCocheAutonomo():
         print("No hay ningun coche autonomo para destruir")
 
 def destruirActores():
+    destruirNPC()
     if len(listaActores) > 0:
-        for actor in listaActores:
+        for actor in reversed(listaActores):
             if actor.is_alive:
                 actor.destroy()
             if actor in listaCocheAutonomo:

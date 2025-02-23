@@ -196,17 +196,17 @@ class CarlaEnv(gym.Env):
         if 2 not in self.cache and 3 not in self.cache and 4 not in self.cache:
             if str(invasion.crossed_lane_markings[0].color) == "Yellow": #Todas las lineas del interior son amarillas
                 self.cache.append(3) # Para lineas continuas interiores
-                print("INTERIOR")
+                print("Linea interior detectada")
             elif "Solid" == str(invasion.crossed_lane_markings[0].type) or "Grass" == str(invasion.crossed_lane_markings[0].type) or "Curb" == str(invasion.crossed_lane_markings[0].type): #Esto reprersentaria la parte derecha de la  carretera
                 self.cache.append(2) # Para todo tipo de linea que no se deberia de poder cruzar, ya sea cualquier tipo de continua o bordillo o hierba
-                print("EXTERIOR")
+                print("Linea exterior detectada")
             elif "Solid" in str(invasion.crossed_lane_markings[0].type): #Esto representaraia la parte que se encuentra entre los 2 carriles
                 self.cache.append(3)
-                print("INTERIOR")
+                print("Linea interior detectada")
             else:
                 self.cache.append(4) # Para lineas discontinuas
             
-            print("Invasion de linea detectada de tipo: " + str(invasion.crossed_lane_markings[0].type))
+            #print("Invasion de linea detectada de tipo: " + str(invasion.crossed_lane_markings[0].type))
 
     def manejadorColisiones(self, colision):
         if self.sensorColision is not None:
