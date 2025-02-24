@@ -224,14 +224,14 @@ def main () :
         n_eval_episodes = 100        # Total number of test episodes
 
         # Environment parameters
-        max_steps = 120              # Max steps per episode
+        max_steps = 200              # Max steps per episode
         gamma = 0.3                 # Discounting rate
         eval_seed = []               # The evaluation seed of the environment
 
         # Exploration parameters
         max_epsilon = 1.0             # Exploration probability at start
         min_epsilon = 0.05            # Minimum exploration probability
-        decay_rate = 0.0025            # Exponential decay rate for exploration prob
+        decay_rate = 0.0012           # Exponential decay rate for exploration prob
 
         #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
@@ -242,8 +242,7 @@ def main () :
     
         print("\nProcedo a spawnear 30 coches y 10 peatones")
         
-         #Codigo de ejemplo carla 
-        listaNPC.extend(spawnearCoches(30,10)) 
+        listaNPC.extend(spawnearCoches(30,10)) #Codigo de ejemplo carla 
         #listaActores.extend(Spawn(enviroment,blueprint_library,10,10)) #Codigo hecho por mi
 
 

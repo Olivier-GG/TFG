@@ -162,6 +162,8 @@ class CarlaEnv(gym.Env):
             if elemento == 2:
                 acu -= 5
             elif elemento == 3:
+                acu -= 6
+            elif elemento == 4:
                 acu -= 1
             elif elemento == 0:
                 acu -= 30
