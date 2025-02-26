@@ -61,11 +61,11 @@ class CarlaEnv(gym.Env):
         elif action == 4:
             self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=0.25)) #Girar 
         elif action == 5:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-1.0)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-0.25)) #Girar 
         elif action == 6:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-0.75)) #Girar 
-        elif action == 7:
             self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-0.5)) #Girar 
+        elif action == 7:
+            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-0.75)) #Girar 
         elif action == 8:
             self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=-0.5, steer=0.0)) #Frenar 
         else:
