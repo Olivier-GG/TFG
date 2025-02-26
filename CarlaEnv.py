@@ -77,7 +77,10 @@ class CarlaEnv(gym.Env):
         info, state = self.get_observation()
 
         # Calcular la recompensa (esto depende de tu objetivo específico)
-        reward = self.calcularRecompensa()  # Aquí va la lógica de recompensa, ejemplo simple
+        if state == 16: #Si es este estado no puede haber recompensa negativa por chocar, es un error a la hora de respawnear
+            reward = 0
+        else:
+            reward = self.calcularRecompensa()  # Aquí va la lógica de recompensa, ejemplo simple
         
         # Verificar si el episodio ha terminado (por ejemplo, si el coche ha chocado)
         done = self.terminated()  # Lógica para determinar cuándo se acaba el episodio
@@ -159,18 +162,18 @@ class CarlaEnv(gym.Env):
 
     def calcularRecompensa(self):
 
-        acu = self.cocheAutonomo.get_location().distance(self.ultimaPosicion) * 3
+        acu = self.cocheAutonomo.get_location().distance(self.ultimaPosicion)
         acu += self.VelocidadVehiculo * 3.6 #Le damos los puntos en base a km/h y no m/s
 
         for elemento in self.cache:
             if elemento == 2:
-                acu -= 4
+                acu -= 5
             elif elemento == 3:
                 acu -= 5
             elif elemento == 4:
                 acu -= 1
             elif elemento == 0:
-                acu -= 30
+                acu -= 40
 
         self.ultimaPosicion = self.cocheAutonomo.get_location()
         return acu

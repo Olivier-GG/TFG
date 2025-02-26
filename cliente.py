@@ -102,7 +102,7 @@ def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mun
 
     #Spawneamos sensor de obstaculos
     sensorObstaculosb = blueprint_library.find('sensor.other.obstacle')
-    sensorObstaculosb.set_attribute('distance', '12')
+    sensorObstaculosb.set_attribute('distance', '20')
     sensorObstaculosb.set_attribute('hit_radius', '0')
     sensorObstaculosb.set_attribute('only_dynamics', 'True')
     sensorObstaculosb.set_attribute('sensor_tick', '1.0')
@@ -214,21 +214,21 @@ def main () :
         #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
 
         # Training parameters
-        n_training_episodes = 2005 # Total training episodes
-        learning_rate = 0.05         # Learning rate
+        n_training_episodes = 3005 # Total training episodes
+        learning_rate = 0.1         # Learning rate
 
         # Evaluation parameters
         n_eval_episodes = 100        # Total number of test episodes
 
         # Environment parameters
         max_steps = 200              # Max steps per episode
-        gamma = 0.3                 # Discounting rate
+        gamma = 0.3                 # Discounting rate 
         eval_seed = []               # The evaluation seed of the environment
 
         # Exploration parameters
         max_epsilon = 1.0             # Exploration probability at start
         min_epsilon = 0.05            # Minimum exploration probability
-        decay_rate = 0.0020           # Exponential decay rate for exploration prob
+        decay_rate = 0.0015           # Exponential decay rate for exploration prob
 
         #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
@@ -250,7 +250,7 @@ def main () :
         if eleccion == "e":
 
             print("Evaluando agente...")
-            Qtable = cargar_qtable("V1-1400")
+            Qtable = cargar_qtable("V1-2000")
             print(Qtable)
             
             mean_reward, std_reward = evaluate_agent(env, max_steps, n_eval_episodes, Qtable)
