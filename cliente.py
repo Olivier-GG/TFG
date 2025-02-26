@@ -222,7 +222,7 @@ def main () :
 
         # Environment parameters
         max_steps = 200              # Max steps per episode
-        gamma = 0.3                 # Discounting rate 
+        gamma = 0.10                 # Discounting rate 
         eval_seed = []               # The evaluation seed of the environment
 
         # Exploration parameters
