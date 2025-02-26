@@ -48,6 +48,9 @@ class CarlaEnv(gym.Env):
         return self.get_observation() #Devuelve informacion al final de cada episodio
 
     def step(self, action):
+        
+        time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
+
         # Convertir la acción en un comando para el coche (ejemplo, movimiento)
         if action == 0:
             self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=1.0, steer=0.0)) #Acelerar
@@ -156,13 +159,14 @@ class CarlaEnv(gym.Env):
 
     def calcularRecompensa(self):
 
-        acu = self.cocheAutonomo.get_location().distance(self.ultimaPosicion) * 2
+        acu = self.cocheAutonomo.get_location().distance(self.ultimaPosicion) * 3
+        acu += self.VelocidadVehiculo * 3.6 #Le damos los puntos en base a km/h y no m/s
 
         for elemento in self.cache:
             if elemento == 2:
-                acu -= 5
+                acu -= 4
             elif elemento == 3:
-                acu -= 6
+                acu -= 5
             elif elemento == 4:
                 acu -= 1
             elif elemento == 0:

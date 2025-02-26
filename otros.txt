@@ -14,7 +14,7 @@ Pruebo entrenarlo con los siguientes parametros, estoy en el commit Se añaden m
         #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
 
         # Training parameters
-        n_training_episodes = 3000  # Total training episodes
+        n_training_episodes = 2005 # Total training episodes
         learning_rate = 0.05         # Learning rate
 
         # Evaluation parameters
@@ -28,4 +28,4 @@ Pruebo entrenarlo con los siguientes parametros, estoy en el commit Se añaden m
         # Exploration parameters
         max_epsilon = 1.0             # Exploration probability at start
         min_epsilon = 0.05            # Minimum exploration probability
-        decay_rate = 0.0012            # Exponential decay rate for exploration prob
+        decay_rate = 0.0020           # Exponential decay rate for exploration prob

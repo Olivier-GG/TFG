@@ -142,13 +142,10 @@ def guardar_qtable(q_table, filename):
         json.dump(q_table.tolist(), f)
 
 # Cargar desde JSON
-def cargar_qtable(filename="qtable.json"):
-    try:
-        with open(filename, "r") as f:
-            return np.array(json.load(f))
-    except FileNotFoundError:
-        print("No se encontró el archivo de la tabla Q, creando una nueva.")
-        return np.zeros((6, 4))  # Ajusta el tamaño
+def cargar_qtable(filename):
+    with open("TablasFase1/" + filename + ".json", "r") as f:
+        q_table = json.load(f)  # Cargar la lista desde JSON
+    return np.array(q_table) 
 
 
 def initialize_q_table(state_space, action_space):
@@ -217,7 +214,7 @@ def main () :
         #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
 
         # Training parameters
-        n_training_episodes = 3005  # Total training episodes
+        n_training_episodes = 2005 # Total training episodes
         learning_rate = 0.05         # Learning rate
 
         # Evaluation parameters
@@ -231,10 +228,9 @@ def main () :
         # Exploration parameters
         max_epsilon = 1.0             # Exploration probability at start
         min_epsilon = 0.05            # Minimum exploration probability
-        decay_rate = 0.0012           # Exponential decay rate for exploration prob
+        decay_rate = 0.0020           # Exponential decay rate for exploration prob
 
         #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
 
 
 
@@ -243,52 +239,35 @@ def main () :
         print("\nProcedo a spawnear 30 coches y 10 peatones")
         
         listaNPC.extend(spawnearCoches(30,10)) #Codigo de ejemplo carla 
-        #listaActores.extend(Spawn(enviroment,blueprint_library,10,10)) #Codigo hecho por mi
 
 
-        #|||| Paso 3, comienza el entrenamiento ||||||||||
-        print("\n\n\n")
-        print("               Comenzando el entrenamiento        \n")
 
-        for episode in range(n_training_episodes):
-            # Reduce epsilon (because we need less and less exploration)
-            epsilon = min_epsilon + (max_epsilon - min_epsilon)*np.exp(-decay_rate*episode)
+        #Paso 3, elegir si queremos evaluar o entrenar agente
 
-            #Printemaos al final de cada episodio para ver como va la Qtable
-            print("\n\n |||||||||||||||||||||||||||||")
-            print("Episodio: " + str(episode))
-            print ("Epsilon: " + str(epsilon))
+        print("Introduce una 't' si quieres entrenar el agente o una 'e' si quieres evaluarlo: ")
+        eleccion = input()
+
+        if eleccion == "e":
+
+            print("Evaluando agente...")
+            Qtable = cargar_qtable("V1-1400")
             print(Qtable)
-            print("||||||||||||||||||||||||||||||| \n\n")
+            
+            mean_reward, std_reward = evaluate_agent(env, max_steps, n_eval_episodes, Qtable)
 
-            # Reset the environment
-            info, state = env.reset()
-            step = 0
-            terminated = False
+            print("Resultados de la evaluación:")
+            print("Mean reward: ", mean_reward)
+            print("Std reward: ", std_reward)
 
-            #Cada 200 episodios guardamos la Qtable para ver la evolución
-            if episode % 200 == 0:
-                guardar_qtable(Qtable, "V1-" + str(episode))
+            
 
-            # repeat
-            for step in range(max_steps):
-                # Elegimos la accion segun nuestra politica
-                time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
-                action = epsilon_greedy_policy(Qtable, state, epsilon, env)
-                #print( "Action: " + str(action))
-                # Take action At and observe Rt+1 and St+1
-                # Take the action (a) and observe the outcome state(s') and reward (r)
-                info, new_state, reward, terminated = env.step(action)
+        elif eleccion == "t":
 
-                # Update Q(s,a):= Q(s,a) + lr [R(s,a) + gamma * max Q(s',a') - Q(s,a)]
-                Qtable[state][action] = Qtable[state][action] + learning_rate * (reward + gamma * np.max(Qtable[new_state]) - Qtable[state][action])
+            print("\n\n\n")
+            print("               Comenzando el entrenamiento        \n")
 
-                # If terminated or truncated finish the episode
-                if terminated:
-                    break
+            train_agent(env, Qtable, n_training_episodes, max_steps, gamma, learning_rate, max_epsilon, min_epsilon, decay_rate, Qtable, max_epsilon)
 
-                # Our next state is the new state
-                state = new_state
 
         env.close()
         print("Enviroment cerrado")
@@ -300,6 +279,91 @@ def main () :
     except Exception as e:
         print("Error: " + str(e))
         destruirActores()
+
+
+
+#||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+#||||| Funciones para el agente ||||| |||||||||||||||||||||||
+#||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
+def train_agent(env, Q, n_training_episodes, max_steps, gamma, learning_rate, epsilon, min_epsilon, decay_rate, Qtable, max_epsilon):
+
+    for episode in range(n_training_episodes):
+        # Reduce epsilon (because we need less and less exploration)
+        epsilon = min_epsilon + (max_epsilon - min_epsilon)*np.exp(-decay_rate*episode)
+
+        #Printemaos al final de cada episodio para ver como va la Qtable
+        print("\n\n |||||||||||||||||||||||||||||")
+        print("Episodio: " + str(episode))
+        print ("Epsilon: " + str(epsilon))
+        print(Qtable)
+        print("||||||||||||||||||||||||||||||| \n\n")
+
+        # Reset the environment
+        info, state = env.reset()
+        step = 0
+        terminated = False
+
+        #Cada 200 episodios guardamos la Qtable para ver la evolución
+        if episode % 200 == 0:
+            guardar_qtable(Qtable, "V1-" + str(episode))
+
+        # repeat
+        for step in range(max_steps):
+            # Elegimos la accion segun nuestra politica
+            action = epsilon_greedy_policy(Qtable, state, epsilon, env)
+            #print( "Action: " + str(action))
+            # Take action At and observe Rt+1 and St+1
+            # Take the action (a) and observe the outcome state(s') and reward (r)
+            info, new_state, reward, terminated = env.step(action)
+
+            # Update Q(s,a):= Q(s,a) + lr [R(s,a) + gamma * max Q(s',a') - Q(s,a)]
+            Qtable[state][action] = Qtable[state][action] + learning_rate * (reward + gamma * np.max(Qtable[new_state]) - Qtable[state][action])
+
+            # If terminated or truncated finish the episode
+            if terminated:
+                break
+
+            # Our next state is the new state
+            state = new_state
+        
+    print("Entrenamiento finalizado, puede proceder a evaluarlo")
+
+
+
+# Evaluate the agent
+def evaluate_agent(env, max_steps, n_eval_episodes, Q):
+
+    episode_rewards = []
+
+    for episode in range(n_eval_episodes):
+
+        info, state = env.reset()
+        step = 0
+        terminated = False
+        total_rewards_ep = 0
+
+        for step in range(max_steps):
+            
+            action = greedy_policy(Q, state)
+            info, new_state, reward, terminated = env.step(action)
+            total_rewards_ep += reward
+            
+            if terminated:
+                break
+            
+            state = new_state
+
+            episode_rewards.append(total_rewards_ep)
+
+        print("Reward: " + str(total_rewards_ep))
+
+    mean_reward = np.mean(episode_rewards)
+    std_reward = np.std(episode_rewards)
+
+    return mean_reward, std_reward
+
+
 
 
 
