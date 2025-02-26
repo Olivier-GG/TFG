@@ -48,8 +48,6 @@ class CarlaEnv(gym.Env):
         return self.get_observation() #Devuelve informacion al final de cada episodio
 
     def step(self, action):
-        
-        time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
 
         # Convertir la acción en un comando para el coche (ejemplo, movimiento)
         if action == 0:
@@ -72,6 +70,8 @@ class CarlaEnv(gym.Env):
             self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=-0.5, steer=0.0)) #Frenar 
         else:
             self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=-1.0, steer=0.0)) #Frenar
+
+        time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
 
         # Obtener la observación actual (por ejemplo, imagen de la cámara)
         info, state = self.get_observation()
@@ -211,6 +211,7 @@ class CarlaEnv(gym.Env):
                 print("Linea interior detectada")
             else:
                 self.cache.append(4) # Para lineas discontinuas
+                print("Linea discontinua detectada")
             
             #print("Invasion de linea detectada de tipo: " + str(invasion.crossed_lane_markings[0].type))
 
