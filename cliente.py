@@ -306,7 +306,7 @@ def train_agent(env, Q, n_training_episodes, max_steps, gamma, learning_rate, ep
 
         #Cada 200 episodios guardamos la Qtable para ver la evolución
         if episode % 200 == 0:
-            guardar_qtable(Qtable, "V1-" + str(episode))
+            guardar_qtable(Qtable, "V2-" + str(episode))
 
         # repeat
         for step in range(max_steps):
