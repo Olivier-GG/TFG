@@ -250,7 +250,7 @@ def main () :
         if eleccion == "e":
 
             print("Evaluando agente...")
-            Qtable = cargar_qtable("V1-2000")
+            Qtable = cargar_qtable("V2-3000")
             print(Qtable)
             
             mean_reward, std_reward = evaluate_agent(env, max_steps, n_eval_episodes, Qtable)
