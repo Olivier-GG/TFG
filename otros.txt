@@ -12,7 +12,7 @@ Pruebo entrenarlo con los siguientes parametros, estoy en el commit Se añaden m
 
 
         # Training parameters
-        n_training_episodes = 3005 # Total training episodes
+        n_training_episodes = 3005  # Total training episodes
         learning_rate = 0.1         # Learning rate
 
         # Evaluation parameters
