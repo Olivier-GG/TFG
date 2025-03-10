@@ -107,57 +107,57 @@ class CarlaEnv(gym.Env):
         if 1 in self.cache:
 
             if self.VelocidadVehiculo <= 0.5:
-                return "obstaculo detectado, Parado, S5", 0
+                return "obstaculo detectado, Parado, S0", 0
             elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "obstaculo detectado, < 10kmh, S6", 1
+                return "obstaculo detectado, < 10kmh, S1", 1
             elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "obstaculo detectado, 10 < 30, S7", 2
+                return "obstaculo detectado, 10 < 30, S2", 2
             else:
-                return "obstaculo detectado, >30 , S8", 3
+                return "obstaculo detectado, >30 , S3", 3
         
         elif 2 in self.cache:
 
             if self.VelocidadVehiculo <= 0.5:
-                return "linea continua exterior detectada, Parado, S5", 4
+                return "linea continua exterior detectada, Parado, S4", 4
             elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "linea continua exterior detectada, < 10kmh, S6", 5
+                return "linea continua exterior detectada, < 10kmh, S5", 5
             elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "linea continua exterior detectada, 10 < 30, S7", 6
+                return "linea continua exterior detectada, 10 < 30, S6", 6
             else:
-                return "linea continua exterior detectada, >30 , S8", 7
+                return "linea continua exterior detectada, >30 , S7", 7
         
         elif 3 in self.cache:
 
             if self.VelocidadVehiculo <= 0.5:
-                return "linea continua interior detectada, Parado, S5", 8
+                return "linea continua interior detectada, Parado, S8", 8
             elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "linea continua interior, < 10kmh, S6", 9
+                return "linea continua interior, < 10kmh, S9", 9
             elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "linea continua interior, 10 < 30, S7", 10
+                return "linea continua interior, 10 < 30, S10", 10
             else:
-                return "linea continua interior, >30 , S8", 11
+                return "linea continua interior, >30 , S11", 11
             
         elif 4 in self.cache:
 
             if self.VelocidadVehiculo <= 0.5:
-                return "linea discontinua detectada, Parado, S5", 12
+                return "linea discontinua detectada, Parado, S12", 12
             elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "linea discontinua detectada, < 10kmh, S6", 13
+                return "linea discontinua detectada, < 10kmh, S13", 13
             elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "linea discontinua detectada, 10 < 30, S7", 14
+                return "linea discontinua detectada, 10 < 30, S14", 14
             else:
-                return "linea discontinua detectada, >30 , S8", 15
+                return "linea discontinua detectada, >30 , S15", 15
         
         else:
 
             if self.VelocidadVehiculo <= 0.5:
-                return "Todo correcto, Parado, S5", 16
+                return "Todo correcto, Parado, S16", 16
             elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "Todo correcto, < 10kmh, S6", 17
+                return "Todo correcto, < 10kmh, S17", 17
             elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "Todo correcto, 10 < 30, S7", 18
+                return "Todo correcto, 10 < 30, S18", 18
             else:
-                return "Todo correcto, >30 , S8", 19
+                return "Todo correcto, >30 , S19", 19
 
 
     def calcularRecompensa(self):

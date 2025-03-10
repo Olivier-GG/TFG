@@ -74,7 +74,7 @@ def evaluate_agent(env, max_steps, n_eval_episodes, Q):
             
             state = new_state
 
-            episode_rewards.append(total_rewards_ep)
+        episode_rewards.append(total_rewards_ep)
 
         print("Reward: " + str(total_rewards_ep))
 
