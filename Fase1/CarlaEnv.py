@@ -51,25 +51,25 @@ class CarlaEnv(gym.Env):
 
         # Convertir la acción en un comando para el coche (ejemplo, movimiento)
         if action == 0:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=1.0, steer=0.0)) #Acelerar
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=1.0, steer=0.0)) #Acelerar
         elif action == 1:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.5, steer=0.0)) #Acelerar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.5, steer=0.0)) #Acelerar 
         elif action == 2:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=0.75)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=0.75)) #Girar 
         elif action == 3:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=0.5)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=0.5)) #Girar 
         elif action == 4:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=0.25)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=0.25)) #Girar 
         elif action == 5:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-0.25)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=-0.25)) #Girar 
         elif action == 6:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-0.5)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=-0.5)) #Girar 
         elif action == 7:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-0.75)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=-0.75)) #Girar 
         elif action == 8:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=-0.5, steer=0.0)) #Frenar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.5, throttle=0.0, steer=0.0)) #Frenar 
         else:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=-1.0, steer=0.0)) #Frenar
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake= 1, throttle=0.0, steer=0.0)) #Frenar
 
         time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
 
