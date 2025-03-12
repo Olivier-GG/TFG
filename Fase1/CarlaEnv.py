@@ -69,7 +69,7 @@ class CarlaEnv(gym.Env):
         elif action == 8:
             self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.5, throttle=0.0, steer=0.0)) #Frenar 
         else:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(brake= 1, throttle=0.0, steer=0.0)) #Frenar
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=1.0, throttle=0.0, steer=0.0)) #Frenar
 
         time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
 
