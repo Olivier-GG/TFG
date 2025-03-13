@@ -51,25 +51,25 @@ class CarlaEnv(gym.Env):
 
         # Convertir la acción en un comando para el coche (ejemplo, movimiento)
         if action == 0:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=1.0, steer=0.0)) #Acelerar
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=1.0, steer=0.0)) #Acelerar
         elif action == 1:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.5, steer=0.0)) #Acelerar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.5, steer=0.0)) #Acelerar 
         elif action == 2:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=0.75)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=0.75)) #Girar 
         elif action == 3:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=0.5)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=0.5)) #Girar 
         elif action == 4:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=0.25)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=0.25)) #Girar 
         elif action == 5:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-0.25)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=-0.25)) #Girar 
         elif action == 6:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-0.5)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=-0.5)) #Girar 
         elif action == 7:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, steer=-0.75)) #Girar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=-0.75)) #Girar 
         elif action == 8:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=-0.5, steer=0.0)) #Frenar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.5, throttle=0.0, steer=0.0)) #Frenar 
         else:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=-1.0, steer=0.0)) #Frenar
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=1.0, throttle=0.0, steer=0.0)) #Frenar
 
         time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
 
@@ -80,7 +80,7 @@ class CarlaEnv(gym.Env):
         if state == 16: #Si es este estado no puede haber recompensa negativa por chocar, es un error a la hora de respawnear
             reward = 0
         else:
-            reward = self.calcularRecompensa()  # Aquí va la lógica de recompensa, ejemplo simple
+            reward = self.calcularRecompensa()  # Aquí va la lógica de recompensa
         
         # Verificar si el episodio ha terminado (por ejemplo, si el coche ha chocado)
         done = self.terminated()  # Lógica para determinar cuándo se acaba el episodio
@@ -107,57 +107,57 @@ class CarlaEnv(gym.Env):
         if 1 in self.cache:
 
             if self.VelocidadVehiculo <= 0.5:
-                return "obstaculo detectado, Parado, S5", 0
+                return "obstaculo detectado, Parado, S0", 0
             elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "obstaculo detectado, < 10kmh, S6", 1
+                return "obstaculo detectado, < 10kmh, S1", 1
             elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "obstaculo detectado, 10 < 30, S7", 2
+                return "obstaculo detectado, 10 < 30, S2", 2
             else:
-                return "obstaculo detectado, >30 , S8", 3
+                return "obstaculo detectado, >30 , S3", 3
         
         elif 2 in self.cache:
 
             if self.VelocidadVehiculo <= 0.5:
-                return "linea continua exterior detectada, Parado, S5", 4
+                return "linea continua exterior detectada, Parado, S4", 4
             elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "linea continua exterior detectada, < 10kmh, S6", 5
+                return "linea continua exterior detectada, < 10kmh, S5", 5
             elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "linea continua exterior detectada, 10 < 30, S7", 6
+                return "linea continua exterior detectada, 10 < 30, S6", 6
             else:
-                return "linea continua exterior detectada, >30 , S8", 7
+                return "linea continua exterior detectada, >30 , S7", 7
         
         elif 3 in self.cache:
 
             if self.VelocidadVehiculo <= 0.5:
-                return "linea continua interior detectada, Parado, S5", 8
+                return "linea continua interior detectada, Parado, S8", 8
             elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "linea continua interior, < 10kmh, S6", 9
+                return "linea continua interior, < 10kmh, S9", 9
             elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "linea continua interior, 10 < 30, S7", 10
+                return "linea continua interior, 10 < 30, S10", 10
             else:
-                return "linea continua interior, >30 , S8", 11
+                return "linea continua interior, >30 , S11", 11
             
         elif 4 in self.cache:
 
             if self.VelocidadVehiculo <= 0.5:
-                return "linea discontinua detectada, Parado, S5", 12
+                return "linea discontinua detectada, Parado, S12", 12
             elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "linea discontinua detectada, < 10kmh, S6", 13
+                return "linea discontinua detectada, < 10kmh, S13", 13
             elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "linea discontinua detectada, 10 < 30, S7", 14
+                return "linea discontinua detectada, 10 < 30, S14", 14
             else:
-                return "linea discontinua detectada, >30 , S8", 15
+                return "linea discontinua detectada, >30 , S15", 15
         
         else:
 
             if self.VelocidadVehiculo <= 0.5:
-                return "Todo correcto, Parado, S5", 16
+                return "Todo correcto, Parado, S16", 16
             elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "Todo correcto, < 10kmh, S6", 17
+                return "Todo correcto, < 10kmh, S17", 17
             elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "Todo correcto, 10 < 30, S7", 18
+                return "Todo correcto, 10 < 30, S18", 18
             else:
-                return "Todo correcto, >30 , S8", 19
+                return "Todo correcto, >30 , S19", 19
 
 
     def calcularRecompensa(self):
@@ -166,13 +166,13 @@ class CarlaEnv(gym.Env):
         acu += self.VelocidadVehiculo * 3.6 #Le damos los puntos en base a km/h y no m/s
 
         for elemento in self.cache:
-            if elemento == 2:
+            if elemento == 2: # Linea exterior
                 acu -= 5
-            elif elemento == 3:
+            elif elemento == 3: # Linea interior
                 acu -= 5
-            elif elemento == 4:
+            elif elemento == 4: # Linea discontinua
                 acu -= 1
-            elif elemento == 0:
+            elif elemento == 0: # Colision
                 acu -= 40
 
         self.ultimaPosicion = self.cocheAutonomo.get_location()

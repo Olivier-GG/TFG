@@ -139,6 +139,7 @@ def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mun
 def cargar_qtable(filename):
     with open("TablasFase1/" + filename + ".json", "r") as f:
         q_table = json.load(f)  # Cargar la lista desde JSON
+        print("Qtable cargada: " + filename)
     return np.array(q_table) 
 
 
@@ -158,7 +159,7 @@ def main () :
 
     try:
 
-        #|||| Paso 1, conectar el cliente con el servidor
+        #|||| Paso 1, conectar el cliente con el servidor e inicializar enviroment ||||||||
         
         cliente = carla.Client('localhost', 2000)
         cliente.set_timeout(15.0)
@@ -182,22 +183,21 @@ def main () :
 
         #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
 
-        # Training parameters
-        n_training_episodes = 3005 # Total training episodes
+        # Parametros de entrenamiento
+        n_training_episodes = 4005  # Total training episodes
         learning_rate = 0.1         # Learning rate
 
-        # Evaluation parameters
+        # Parametros de evaluación
         n_eval_episodes = 100        # Total number of test episodes
 
-        # Environment parameters
+        # Parametros de episodio
         max_steps = 200              # Max steps per episode
         gamma = 0.10                 # Discounting rate 
-        eval_seed = []               # The evaluation seed of the environment
 
-        # Exploration parameters
+        # Parametros de exploración
         max_epsilon = 1.0             # Exploration probability at start
         min_epsilon = 0.05            # Minimum exploration probability
-        decay_rate = 0.0015           # Exponential decay rate for exploration prob
+        decay_rate = 0.0020           # Exponential decay rate for exploration prob
 
         #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
@@ -210,7 +210,7 @@ def main () :
         listaNPC.extend(spawnearCoches(30,10)) #Codigo de ejemplo carla 
 
 
-        #Paso 3, elegir si queremos evaluar o entrenar agente
+        # ||||||||||||| Paso 3, elegir si queremos evaluar o entrenar agente ||||||||||||||
 
         print("\nIntroduce una 't' si quieres entrenar el agente o una 'e' si quieres evaluarlo(Seleccionar en el codigo que Qtable desea cargar -línea 221-): ")
         eleccion = input()
@@ -218,7 +218,7 @@ def main () :
         if eleccion == "e" or eleccion == "E":
 
             print("Evaluando agente...")
-            Qtable = cargar_qtable("V2-3000")
+            Qtable = cargar_qtable("V2-4000")
             print(Qtable)
             
             mean_reward, std_reward = evaluate_agent(env, max_steps, n_eval_episodes, Qtable)
