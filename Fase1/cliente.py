@@ -184,7 +184,7 @@ def main () :
         #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
 
         # Parametros de entrenamiento
-        n_training_episodes = 3005  # Total training episodes
+        n_training_episodes = 4005  # Total training episodes
         learning_rate = 0.1         # Learning rate
 
         # Parametros de evaluación
@@ -197,7 +197,7 @@ def main () :
         # Parametros de exploración
         max_epsilon = 1.0             # Exploration probability at start
         min_epsilon = 0.05            # Minimum exploration probability
-        decay_rate = 0.0015           # Exponential decay rate for exploration prob
+        decay_rate = 0.0020           # Exponential decay rate for exploration prob
 
         #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
@@ -218,7 +218,7 @@ def main () :
         if eleccion == "e" or eleccion == "E":
 
             print("Evaluando agente...")
-            Qtable = cargar_qtable("V2-3000")
+            Qtable = cargar_qtable("V2-4000")
             print(Qtable)
             
             mean_reward, std_reward = evaluate_agent(env, max_steps, n_eval_episodes, Qtable)
