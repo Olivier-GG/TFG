@@ -10,6 +10,7 @@ import cv2
 import random
 import math
 from PIL import Image
+from gymnasium.envs.registration import register
 
 # Encontrar modulo de carla
 try:
@@ -21,19 +22,26 @@ except IndexError:
     pass
 
 
+register(
+    id='CarlaEnviroment',                                # Call it whatever you want
+    entry_point='CarlaEnvFase2:CarlaEnv',                # Module name and class name
+)
 class CarlaEnv(gym.Env):
-    def __init__(self, client):
-        super(CarlaEnv, self).__init__()
 
-        self.cliente = client
-        self.world = self.cliente.get_world()
-        self.blueprint_library = self.world.get_blueprint_library()
-        self.puntosSpawn = self.world.get_map().get_spawn_points()
+    metadata = {"render_modes": ["human"], 'render_fps': 4}
+
+    def __init__(self, render_mode=None):
+        
+        self.render_mode = render_mode
+        self.cliente = None
+        self.world = None
+        self.blueprint_library = None
+        self.puntosSpawn = None
         self.cache = []
         self.cocheAutonomo = None
         self.sensorColision = None
         self.sensorColisionOld = None
-        self.sensorColisionb = self.blueprint_library.find('sensor.other.collision')
+        self.sensorColisionb = None
         self.posicionInicial = None
         self.ultimaPosicion = None
         self.VelocidadVehiculo = 0
@@ -42,11 +50,15 @@ class CarlaEnv(gym.Env):
         self.observation_space = spaces.Discrete(20) # Todas las combinaciones de los  (linea y obstaculos), porque el de colisión es para acabar el episodio
 
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
         
+        super().reset(seed=seed)
+
         self.moverCochePosicionIncial()
         self.cache = [] #Limpiamos la cache por si acaso
-        return self.get_observation() #Devuelve informacion al final de cada episodio
+        info, obs = self.get_observation()
+        dic = {"info": info}
+        return obs, dic #Devuelve informacion al final de cada episodio
 
     def step(self, action):
 
@@ -75,10 +87,10 @@ class CarlaEnv(gym.Env):
         time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
 
         # Obtener la observación actual (por ejemplo, imagen de la cámara)
-        info, state = self.get_observation()
+        info, obs = self.get_observation()
 
         # Calcular la recompensa (esto depende de tu objetivo específico)
-        if state == 16: #Si es este estado no puede haber recompensa negativa por chocar, es un error a la hora de respawnear
+        if obs == 16: #Si es este estado no puede haber recompensa negativa por chocar, es un error a la hora de respawnear
             reward = 0
         else:
             reward = self.calcularRecompensa()  # Aquí va la lógica de recompensa
@@ -98,8 +110,9 @@ class CarlaEnv(gym.Env):
 
         self.cache = [] #Vaciamos la cache para que no se acumulen los datos
         
+        dic = {"info": info}
 
-        return info, state, reward, done
+        return obs, reward, done, False,  dic 
 
     def get_observation(self):
 
@@ -181,9 +194,11 @@ class CarlaEnv(gym.Env):
 
     def render(self, mode='human'):
         # Renderizar el entorno para visualizarlo (si es necesario)
-        pass
+        info, obs = self.get_observation()
+        print(info)
 
     def close(self):
+        print("Cerrando entorno")
         # Limpiar y cerrar los recursos al finalizar
         self.sensorColision.stop()
         self.sensorColision.destroy()
@@ -264,13 +279,21 @@ class CarlaEnv(gym.Env):
         self.cocheAutonomo = vehiculo
         self.ultimaPosicion = self.cocheAutonomo.get_location()
         self.posicionInicial = self.cocheAutonomo.get_location()
+        self.sensorColisionb = self.blueprint_library.find('sensor.other.collision')
+
+    def setCliente(self, cliente):
+        self.cliente = cliente
+        self.world = self.cliente.get_world()
+        self.blueprint_library = self.world.get_blueprint_library()
+        self.puntosSpawn = self.world.get_map().get_spawn_points()
 
     #Funcion que mueve el coche a la posicion inicial y setea el sensor de colision
     def moverCochePosicionIncial(self):
         print("Moviendo coche a la nueva posicion aleatoria")
         #self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0)) # Frenamos el coche
-        self.cocheAutonomo.set_simulate_physics(False)
+        
         if self.cocheAutonomo is not None:
+            self.cocheAutonomo.set_simulate_physics(False)
             if self.sensorColision is not None: #Si hay un sensor de colision lo destruimos
                 self.sensorColisionOld = self.sensorColision
                 self.sensorColisionOld.destroy()

@@ -17,6 +17,7 @@ import gymnasium as gym
 from gymnasium import spaces
 from CarlaEnvFase2 import CarlaEnv
 from FuncionesEntrenamientoFase2 import train_agent, evaluate_agent
+from stable_baselines3.common.env_checker import check_env
 
 # Encontrar modulo de carla
 try:
@@ -155,21 +156,13 @@ def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mun
     sensorObstaculos.listen(lambda obstaculo: env.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
     
     #sensorLidar.listen(lambda lidar: env.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-    sensorSemantico.listen(lambda semantico: env.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-    vehiculoAutonomo.set_autopilot(True) #Activamos el autopilot para que el coche autonomo se mueva solo
-
+    #sensorSemantico.listen(lambda semantico: env.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
+   
     return vehiculoAutonomo
 
 
 
 # |||||||| Funciones auxiliares ||||||||||
-
-# Cargar desde JSON
-def cargar_qtable(filename):
-    with open("TablasFase1/" + filename + ".json", "r") as f:
-        q_table = json.load(f)  # Cargar la lista desde JSON
-        print("Qtable cargada: " + filename)
-    return np.array(q_table) 
 
 
 def initialize_q_table(state_space, action_space):
@@ -197,12 +190,17 @@ def main () :
         blueprint_library = world.get_blueprint_library()
 
         #Incializamos el entorno de gym
-        env = CarlaEnv(cliente)
+        env = gym.make('CarlaEnviroment')
+        env.setCliente(cliente)
+        
         vehiculo = spawnearVehiculoAutonomo(world, blueprint_library, env) # Se le pasa el enviromental para poder manejar los sensores
         env.setCocheAutonomo(vehiculo)
+        
 
         state_space = env.observation_space.n
         action_space = env.action_space.n
+
+        check_env(env.unwrapped)
 
         #Inicializamos Qtable
         Qtable = initialize_q_table(state_space, action_space)
@@ -247,7 +245,7 @@ def main () :
         if eleccion == "e" or eleccion == "E":
 
             print("Evaluando agente...")
-            Qtable = cargar_qtable("V2-4000")
+            
             print(Qtable)
             
             mean_reward, std_reward = evaluate_agent(env, max_steps, n_eval_episodes, Qtable)
