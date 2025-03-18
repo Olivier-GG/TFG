@@ -17,7 +17,7 @@ def train_agent(env, Q, n_training_episodes, max_steps, gamma, learning_rate, ep
         print("||||||||||||||||||||||||||||||| \n\n")
 
         # Reseteamos el enviroment
-        info, state = env.reset()
+        state, info = env.reset()
         step = 0
         terminated = False
 
@@ -30,7 +30,7 @@ def train_agent(env, Q, n_training_episodes, max_steps, gamma, learning_rate, ep
             # Take action At and observe Rt+1 and St+1
             # Take the action (a) and observe the outcome state(s') and reward (r)
 
-            info, new_state, reward, terminated = env.step(action)
+            new_state, reward, terminated, truncated, info  = env.step(action)
 
             # Update Q(s,a):= Q(s,a) + lr [R(s,a) + gamma * max Q(s',a') - Q(s,a)]
             

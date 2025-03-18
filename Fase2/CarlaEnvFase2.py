@@ -33,15 +33,16 @@ class CarlaEnv(gym.Env):
     def __init__(self, render_mode=None):
         
         self.render_mode = render_mode
-        self.cliente = None
-        self.world = None
-        self.blueprint_library = None
-        self.puntosSpawn = None
+        self.cliente = carla.Client('localhost', 2000)
+        self.world = self.cliente.get_world()
+        self.blueprint_library = self.world.get_blueprint_library()
+        self.puntosSpawn = self.world.get_map().get_spawn_points()
         self.cache = []
-        self.cocheAutonomo = None
+        self.listaActores = []
+        self.cocheAutonomo = self.spawnearVehiculoAutonomo(self.world, self.blueprint_library)
         self.sensorColision = None
         self.sensorColisionOld = None
-        self.sensorColisionb = None
+        self.sensorColisionb = self.blueprint_library.find('sensor.other.collision')
         self.posicionInicial = None
         self.ultimaPosicion = None
         self.VelocidadVehiculo = 0
@@ -205,6 +206,8 @@ class CarlaEnv(gym.Env):
         if self.sensorColisionOld.is_alive:
             self.sensorColisionOld.stop()
             self.sensorColisionOld.destroy()
+        
+        self.destruirActores()
         print("Cerrando entorno")
 
     def terminated(self):
@@ -274,6 +277,18 @@ class CarlaEnv(gym.Env):
     #Funciones auxiliares
     #|||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
+    def destruirActores(self):
+        if len(self.listaActores) > 0:
+            for actor in reversed(self.listaActores):
+                if actor.is_alive:
+                    actor.destroy()
+                if actor in self.listaCocheAutonomo:
+                    self.listaCocheAutonomo.remove(actor)
+            self.listaActores.clear()
+            print("Se ha vaciado toda la lista de actores")
+        else:
+            print("No hay ningun actor para destruir")
+
     #Setter coche autonomo
     def setCocheAutonomo(self, vehiculo):
         self.cocheAutonomo = vehiculo
@@ -282,7 +297,7 @@ class CarlaEnv(gym.Env):
         self.sensorColisionb = self.blueprint_library.find('sensor.other.collision')
 
     def setCliente(self, cliente):
-        self.cliente = cliente
+        self.cliente = carla.Client('localhost', 2000)
         self.world = self.cliente.get_world()
         self.blueprint_library = self.world.get_blueprint_library()
         self.puntosSpawn = self.world.get_map().get_spawn_points()
@@ -310,7 +325,118 @@ class CarlaEnv(gym.Env):
             self.sensorColision.listen(lambda colision: self.manejadorColisiones(colision))
             
 
+        
+    def spawnearVehiculoAutonomo(self, world, blueprint_library): #Se le pasa el mundo y la libreria de blueprints para poder spawnear los actores 
 
+        print("Empezamos a spawnear el coche autonomo")
+
+        #Comenzamos spawneado el vehículo, en caso de que no se pueda spawnear en el punto deseado se intentará en otro
+        vehiculoAutonomo = None
+        for transform in world.get_map().get_spawn_points():
+            vehiculoAutonomo = world.try_spawn_actor(blueprint_library.filter('vehicle.*.*')[0], transform)
+            if vehiculoAutonomo is None:
+                print("Spawn point ocupado, probando otro...")
+            else:
+                print("Vehículo spawneado exitosamente")
+                break
+
+        self.listaActores.append(vehiculoAutonomo)
+
+        #||||||||||||||||||||||||||||
+        #|||||||| Sensores ||||||||||
+        #||||||||||||||||||||||||||||
+
+        #Spawneamos camara para ver vehiculo
+        camarab = blueprint_library.find('sensor.camera.rgb')
+        camarab.set_attribute('image_size_x', '800')
+        camarab.set_attribute('image_size_y', '600')
+        camarab.set_attribute('fov', '90')
+        camara = world.try_spawn_actor(blueprint_library.find('sensor.camera.rgb'),  carla.Transform(carla.Location(x=-7, z=3)), attach_to=vehiculoAutonomo)
+        self.listaActores.append(camara)
+        if camara is None:
+            print("No se ha podido spawnear la camara")
+            return None
+        else:
+            print("Camara spawneada")
+
+
+        #Spawneamos sensor de colision
+        sensorColisionb = blueprint_library.find('sensor.other.collision')
+        sensorColision = world.try_spawn_actor(sensorColisionb, carla.Transform(), attach_to=vehiculoAutonomo)
+        self.listaActores.append(sensorColision)
+        if sensorColision is None:
+            print("No se ha podido spawnear el sensor de colision")
+            return None
+        else:
+            print("Sensor de colision spawneado")
+
+
+        #Spawneamos sensor de invasion de linea
+        sensorInvasionb = blueprint_library.find('sensor.other.lane_invasion')
+        sensorInvasion = world.try_spawn_actor(sensorInvasionb, carla.Transform(), attach_to=vehiculoAutonomo)
+        self.listaActores.append(sensorInvasion)
+        if sensorInvasion is None:
+            print("No se ha podido spawnear el sensor de invasion de linea")
+            return None
+        else:
+            print("Sensor de invasion de linea spawneado")
+
+
+        #Spawneamos sensor de obstaculos
+        sensorObstaculosb = blueprint_library.find('sensor.other.obstacle')
+        sensorObstaculosb.set_attribute('distance', '20')
+        sensorObstaculosb.set_attribute('hit_radius', '0')
+        sensorObstaculosb.set_attribute('only_dynamics', 'True')
+        sensorObstaculosb.set_attribute('sensor_tick', '1.0')
+        sensorObstaculos = world.try_spawn_actor(sensorObstaculosb, carla.Transform(), attach_to=vehiculoAutonomo)
+        self.listaActores.append(sensorObstaculos)
+        if sensorObstaculos is None:
+            print("No se ha podido spawnear el sensor de obstaculos")
+            return None
+        else:
+            print("Sensor de obstaculos spawneado")
+
+
+        #Spawneamos sensor lidar
+        sensorLidarb = blueprint_library.find('sensor.lidar.ray_cast')
+        sensorLidarb.set_attribute('sensor_tick', '1.0')
+        sensorLidar = world.try_spawn_actor(sensorLidarb, carla.Transform(carla.Location(x=0, z=2.5)), attach_to=vehiculoAutonomo)
+        self.listaActores.append(sensorLidar)
+        if sensorLidar is None:
+            print("No se ha podido spawnear el sensor Lidar")
+            return None
+        else:
+            print("Sensor Lidar spawneado")
+
+        #Spawneamos sensor semantico
+        sensorSemantico = blueprint_library.find('sensor.camera.semantic_segmentation')
+        sensorSemantico.set_attribute('image_size_x', '300')
+        sensorSemantico.set_attribute('image_size_y', '300')
+        sensorSemantico.set_attribute('fov', '70')
+        sensorSemantico.set_attribute('sensor_tick', '2.0')
+        sensorSemantico = world.try_spawn_actor(sensorSemantico, carla.Transform(carla.Location(x=0, z=2.5)), attach_to=vehiculoAutonomo)
+        self.listaActores.append(sensorSemantico)
+        if sensorSemantico is None:
+            print("No se ha podido spawnear el sensor semantico")
+            return None
+        else:
+            print("Sensor semantico spawneado")
+
+
+        #||||||||||||||||||||||
+        #Activamos los sensores
+        #||||||||||||||||||||||
+
+        #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
+        camara.listen(lambda image: self.manejarSensorCamara(world, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
+        #sensorColision.listen(lambda colision: env.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision
+        sensorInvasion.listen(lambda invasion: self.manejarSensorLinea(invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
+        sensorObstaculos.listen(lambda obstaculo: self.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
+        
+        #sensorLidar.listen(lambda lidar: env.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
+        #sensorSemantico.listen(lambda semantico: env.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
     
+        return vehiculoAutonomo
         
             
+                

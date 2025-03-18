@@ -191,16 +191,9 @@ def main () :
 
         #Incializamos el entorno de gym
         env = gym.make('CarlaEnviroment')
-        env.setCliente(cliente)
         
-        vehiculo = spawnearVehiculoAutonomo(world, blueprint_library, env) # Se le pasa el enviromental para poder manejar los sensores
-        env.setCocheAutonomo(vehiculo)
-        
-
         state_space = env.observation_space.n
         action_space = env.action_space.n
-
-        check_env(env.unwrapped)
 
         #Inicializamos Qtable
         Qtable = initialize_q_table(state_space, action_space)
@@ -275,10 +268,12 @@ def main () :
 
     except KeyboardInterrupt:
         destruirActores()
+        env.close()
 
     except Exception as e:
         print("Error: " + str(e))
         destruirActores()
+        env.close() 
 
 
 
