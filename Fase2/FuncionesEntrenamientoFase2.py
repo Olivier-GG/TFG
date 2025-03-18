@@ -1,84 +1,54 @@
 import numpy as np
 import random
 import json
+from stable_baselines3 import A2C
+import os
 
 
-def train_agent(env, Q, n_training_episodes, max_steps, gamma, learning_rate, epsilon, min_epsilon, decay_rate, Qtable, max_epsilon):
+def train_agent(env):
 
-    for episode in range(n_training_episodes):
-        # Reduce epsilon, para aumentar la explotación y disminuir la exploración
-        epsilon = min_epsilon + (max_epsilon - min_epsilon)*np.exp(-decay_rate*episode)
+   # Where to store trained model and logs
+    model_dir = "models"
+    log_dir = "logs"
+    os.makedirs(model_dir, exist_ok=True)
+    os.makedirs(log_dir, exist_ok=True)
 
-        #Printemaos al final de cada episodio para ver como va la Qtable
-        print("\n\n |||||||||||||||||||||||||||||")
-        print("Episodio: " + str(episode))
-        print ("Epsilon: " + str(epsilon))
-        print(Qtable)
-        print("||||||||||||||||||||||||||||||| \n\n")
+    # Use Advantage Actor Critic (A2C) algorithm.
+    # Use MlpPolicy for observation space 1D vector.
+    model = A2C('MlpPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir)
+   
+    # This loop will keep training until you stop it with Ctr-C.
+    # Start another cmd prompt and launch Tensorboard: tensorboard --logdir logs
+    # Once Tensorboard is loaded, it will print a URL. Follow the URL to see the status of the training.
+    # Stop the training when you're satisfied with the status.
+    TIMESTEPS = 1000
+    iters = 0
+    while True:
+        iters += 1
 
-        # Reseteamos el enviroment
-        state, info = env.reset()
-        step = 0
-        terminated = False
-
-        
-        for step in range(max_steps):
-            # Elegimos la accion segun nuestra politica
-            action = epsilon_greedy_policy(Qtable, state, epsilon, env)
-            #print( "Action: " + str(action))
-
-            # Take action At and observe Rt+1 and St+1
-            # Take the action (a) and observe the outcome state(s') and reward (r)
-
-            new_state, reward, terminated, truncated, info  = env.step(action)
-
-            # Update Q(s,a):= Q(s,a) + lr [R(s,a) + gamma * max Q(s',a') - Q(s,a)]
-            
-            Qtable[state][action] = Qtable[state][action] + learning_rate * (reward + gamma * np.max(Qtable[new_state]) - Qtable[state][action])
-
-            # If terminated or truncated finish the episode
-            if terminated:
-                break
-
-            # Our next state is the new state
-            state = new_state
+        model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False) # train
+        model.save(f"{model_dir}/a2c_{TIMESTEPS*iters}") # Save a trained model every TIMESTEPS
         
     print("Entrenamiento finalizado, puede proceder a evaluarlo")
 
 
 
 # Evaluate the agent
-def evaluate_agent(env, max_steps, n_eval_episodes, Q):
+def evaluate_agent(env):
 
-    episode_rewards = []
+    # Load model
+    model = A2C.load('models/a2c_2000', env=env)
 
-    for episode in range(n_eval_episodes):
+    # Run a test
+    obs = env.reset()[0]
+    terminated = False
+    while True:
+        action, _ = model.predict(observation=obs, deterministic=True) # Turn on deterministic, so predict always returns the same behavior
+        obs, _, terminated, _, _ = env.step(action)
 
-        info, state = env.reset()
-        step = 0
-        terminated = False
-        total_rewards_ep = 0
-
-        for step in range(max_steps):
-            
-            action = greedy_policy(Q, state)
-            info, new_state, reward, terminated = env.step(action)
-            total_rewards_ep += reward
-            
-            if terminated:
-                break
-            
-            state = new_state
-
-        episode_rewards.append(total_rewards_ep)
-
-        print("Reward: " + str(total_rewards_ep))
-
-    mean_reward = np.mean(episode_rewards)
-    std_reward = np.std(episode_rewards)
-
-    return mean_reward, std_reward
-
+        if terminated:
+            break
+        
 
 
 #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||

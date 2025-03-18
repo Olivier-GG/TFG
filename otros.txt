@@ -27,3 +27,11 @@ Pruebo entrenarlo con los siguientes parametros, estoy en el commit Se añaden m
         max_epsilon = 1.0             # Exploration probability at start
         min_epsilon = 0.05            # Minimum exploration probability
         decay_rate = 0.0015           # Exponential decay rate for exploration prob
+
+
+
+
+
+        para ver la tensor board
+
+        tensorboard --logdir logs 

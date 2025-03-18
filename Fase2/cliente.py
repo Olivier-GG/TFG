@@ -239,13 +239,9 @@ def main () :
 
             print("Evaluando agente...")
             
-            print(Qtable)
-            
-            mean_reward, std_reward = evaluate_agent(env, max_steps, n_eval_episodes, Qtable)
+            evaluate_agent(env)
 
-            print("Resultados de la evaluación:")
-            print("Mean reward: ", mean_reward)
-            print("Std reward: ", std_reward)
+            print("Evaluar agente completado")
 
             
         elif eleccion == "t" or eleccion == "T":
@@ -253,7 +249,7 @@ def main () :
             
             print("               Comenzando el entrenamiento        \n")
 
-            train_agent(env, Qtable, n_training_episodes, max_steps, gamma, learning_rate, max_epsilon, min_epsilon, decay_rate, Qtable, max_epsilon)
+            train_agent(env)
 
             print("\n\n\n")
             print("               Entrenamiento completado         \n")
