@@ -15,8 +15,8 @@ import json
 import cv2
 import gymnasium as gym
 from gymnasium import spaces
-from CarlaEnv import CarlaEnv
-from FuncionesEntrenamientoFase1 import train_agent, evaluate_agent
+from CarlaEnvFase2 import CarlaEnv
+from FuncionesEntrenamientoFase2 import train_agent, evaluate_agent
 
 # Encontrar modulo de carla
 try:
@@ -116,6 +116,33 @@ def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mun
         print("Sensor de obstaculos spawneado")
 
 
+    #Spawneamos sensor lidar
+    sensorLidarb = blueprint_library.find('sensor.lidar.ray_cast')
+    sensorLidarb.set_attribute('sensor_tick', '1.0')
+    sensorLidar = world.try_spawn_actor(sensorLidarb, carla.Transform(carla.Location(x=0, z=2.5)), attach_to=vehiculoAutonomo)
+    listaActores.append(sensorLidar)
+    listaCocheAutonomo.append(sensorLidar)
+    if sensorLidar is None:
+        print("No se ha podido spawnear el sensor Lidar")
+        return None
+    else:
+        print("Sensor Lidar spawneado")
+
+    #Spawneamos sensor semantico
+    sensorSemantico = blueprint_library.find('sensor.camera.semantic_segmentation')
+    sensorSemantico.set_attribute('image_size_x', '300')
+    sensorSemantico.set_attribute('image_size_y', '300')
+    sensorSemantico.set_attribute('fov', '70')
+    sensorSemantico.set_attribute('sensor_tick', '2.0')
+    sensorSemantico = world.try_spawn_actor(sensorSemantico, carla.Transform(carla.Location(x=0, z=2.5)), attach_to=vehiculoAutonomo)
+    listaActores.append(sensorSemantico)
+    listaCocheAutonomo.append(sensorSemantico)
+    if sensorSemantico is None:
+        print("No se ha podido spawnear el sensor semantico")
+        return None
+    else:
+        print("Sensor semantico spawneado")
+
 
     #||||||||||||||||||||||
     #Activamos los sensores
@@ -126,8 +153,10 @@ def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mun
     #sensorColision.listen(lambda colision: env.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision
     sensorInvasion.listen(lambda invasion: env.manejarSensorLinea(invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
     sensorObstaculos.listen(lambda obstaculo: env.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-   
-
+    
+    #sensorLidar.listen(lambda lidar: env.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
+    sensorSemantico.listen(lambda semantico: env.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
+    vehiculoAutonomo.set_autopilot(True) #Activamos el autopilot para que el coche autonomo se mueva solo
 
     return vehiculoAutonomo
 

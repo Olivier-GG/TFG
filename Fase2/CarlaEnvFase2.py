@@ -9,6 +9,7 @@ import time
 import cv2
 import random
 import math
+from PIL import Image
 
 # Encontrar modulo de carla
 try:
@@ -244,6 +245,14 @@ class CarlaEnv(gym.Env):
         cv2.imshow("", img2)
         cv2.waitKey(100)
 
+    def manejarSensorLidar(self, lidar):
+        data = np.frombuffer(lidar.raw_data, dtype=np.float32)  # Convertir a numpy
+        data = np.reshape(data, (-1, 4))  # Cada punto tiene (X, Y, Z, Intensidad)
+        print(f"LiDAR recibió {data.shape[0]} puntos")
+        print(data)  # Imprimir los primeros 5 puntos para ver el formato
+
+    def manejarSensorSemantico (self, semantico):
+        semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
 
 
     #|||||||||||||||||||||||||||||||||||||||||||||||||||||||
