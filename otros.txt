@@ -35,3 +35,7 @@ Pruebo entrenarlo con los siguientes parametros, estoy en el commit Se añaden m
         para ver la tensor board
 
         tensorboard --logdir logs 
+
+
+
+        cambiarlo a Dqn y no a2c con Cnn policy

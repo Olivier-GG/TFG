@@ -1,7 +1,7 @@
 import numpy as np
 import random
 import json
-from stable_baselines3 import A2C
+from stable_baselines3 import DQN
 import os
 
 
@@ -15,19 +15,19 @@ def train_agent(env):
 
     # Use Advantage Actor Critic (A2C) algorithm.
     # Use MlpPolicy for observation space 1D vector.
-    model = A2C('MlpPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir)
+    model = DQN('CnnPolicy', env, verbose=1, tensorboard_log=log_dir) # si no pones cuda automaticamente se pone en gpu
    
     # This loop will keep training until you stop it with Ctr-C.
     # Start another cmd prompt and launch Tensorboard: tensorboard --logdir logs
     # Once Tensorboard is loaded, it will print a URL. Follow the URL to see the status of the training.
     # Stop the training when you're satisfied with the status.
-    TIMESTEPS = 1000
+    TIMESTEPS = 1000 # 200 * numero de episodios para compensar 
     iters = 0
     while True:
         iters += 1
 
         model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False) # train
-        model.save(f"{model_dir}/a2c_{TIMESTEPS*iters}") # Save a trained model every TIMESTEPS
+        model.save(f"{model_dir}/dqn_{TIMESTEPS*iters}") # Save a trained model every TIMESTEPS
         
     print("Entrenamiento finalizado, puede proceder a evaluarlo")
 
@@ -37,7 +37,7 @@ def train_agent(env):
 def evaluate_agent(env):
 
     # Load model
-    model = A2C.load('models/a2c_2000', env=env)
+    model = DQN.load('models/a2c_2000', env=env)
 
     # Run a test
     obs = env.reset()[0]

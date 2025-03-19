@@ -28,7 +28,7 @@ register(
 )
 class CarlaEnv(gym.Env):
 
-    metadata = {"render_modes": ["human"], 'render_fps': 4}
+    metadata = {"render_modes": ["human"], 'render_fps': 60}
 
     def __init__(self, render_mode=None):
         
@@ -39,16 +39,18 @@ class CarlaEnv(gym.Env):
         self.puntosSpawn = self.world.get_map().get_spawn_points()
         self.cache = []
         self.listaActores = []
-        self.cocheAutonomo = self.spawnearVehiculoAutonomo(self.world, self.blueprint_library)
         self.sensorColision = None
         self.sensorColisionOld = None
         self.sensorColisionb = self.blueprint_library.find('sensor.other.collision')
         self.posicionInicial = None
         self.ultimaPosicion = None
         self.VelocidadVehiculo = 0
+        self.FrameActual = None
+
+        self.cocheAutonomo = self.spawnearVehiculoAutonomo(self.world, self.blueprint_library)
         
         self.action_space = spaces.Discrete(10)  # Puede ser aceleración, frenado, dirección, etc.
-        self.observation_space = spaces.Discrete(20) # Todas las combinaciones de los  (linea y obstaculos), porque el de colisión es para acabar el episodio
+        self.observation_space = spaces.Box(low=0, high=255, shape=(N_CHANNELS, HEIGHT, WIDTH), dtype=np.uint8) # Todas las combinaciones de los  (linea y obstaculos), porque el de colisión es para acabar el episodio
 
 
     def reset(self, seed=None, options=None):
@@ -57,9 +59,8 @@ class CarlaEnv(gym.Env):
 
         self.moverCochePosicionIncial()
         self.cache = [] #Limpiamos la cache por si acaso
-        info, obs = self.get_observation()
-        dic = {"info": info}
-        return obs, dic #Devuelve informacion al final de cada episodio
+        obs, info = self.get_observation()
+        return obs, info #Devuelve informacion al final de cada episodio
 
     def step(self, action):
 
@@ -88,7 +89,7 @@ class CarlaEnv(gym.Env):
         time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
 
         # Obtener la observación actual (por ejemplo, imagen de la cámara)
-        info, obs = self.get_observation()
+        obs, info = self.get_observation()
 
         # Calcular la recompensa (esto depende de tu objetivo específico)
         if obs == 16: #Si es este estado no puede haber recompensa negativa por chocar, es un error a la hora de respawnear
@@ -111,68 +112,21 @@ class CarlaEnv(gym.Env):
 
         self.cache = [] #Vaciamos la cache para que no se acumulen los datos
         
-        dic = {"info": info}
 
-        return obs, reward, done, False,  dic 
+        return obs, reward, done, False, info 
 
     def get_observation(self):
 
-        self.VelocidadVehiculo = math.sqrt(self.cocheAutonomo.get_velocity().x**2 + self.cocheAutonomo.get_velocity().y**2) # Esta en m/s
-        
-        if 1 in self.cache:
+        print("Obteniendo observacion")
+        dic = {"info": "información"}
 
-            if self.VelocidadVehiculo <= 0.5:
-                return "obstaculo detectado, Parado, S0", 0
-            elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "obstaculo detectado, < 10kmh, S1", 1
-            elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "obstaculo detectado, 10 < 30, S2", 2
-            else:
-                return "obstaculo detectado, >30 , S3", 3
-        
-        elif 2 in self.cache:
+        while self.FrameActual is None:
+            time.sleep(0.1)
 
-            if self.VelocidadVehiculo <= 0.5:
-                return "linea continua exterior detectada, Parado, S4", 4
-            elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "linea continua exterior detectada, < 10kmh, S5", 5
-            elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "linea continua exterior detectada, 10 < 30, S6", 6
-            else:
-                return "linea continua exterior detectada, >30 , S7", 7
-        
-        elif 3 in self.cache:
+        obs = self.FrameActual
+        self.FrameActual = None
 
-            if self.VelocidadVehiculo <= 0.5:
-                return "linea continua interior detectada, Parado, S8", 8
-            elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "linea continua interior, < 10kmh, S9", 9
-            elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "linea continua interior, 10 < 30, S10", 10
-            else:
-                return "linea continua interior, >30 , S11", 11
-            
-        elif 4 in self.cache:
-
-            if self.VelocidadVehiculo <= 0.5:
-                return "linea discontinua detectada, Parado, S12", 12
-            elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "linea discontinua detectada, < 10kmh, S13", 13
-            elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "linea discontinua detectada, 10 < 30, S14", 14
-            else:
-                return "linea discontinua detectada, >30 , S15", 15
-        
-        else:
-
-            if self.VelocidadVehiculo <= 0.5:
-                return "Todo correcto, Parado, S16", 16
-            elif self.VelocidadVehiculo > 0.5 and self.VelocidadVehiculo < 3:
-                return "Todo correcto, < 10kmh, S17", 17
-            elif self.VelocidadVehiculo >= 3 and self.VelocidadVehiculo < 9:
-                return "Todo correcto, 10 < 30, S18", 18
-            else:
-                return "Todo correcto, >30 , S19", 19
+        return obs, dic
 
 
     def calcularRecompensa(self):
@@ -272,6 +226,21 @@ class CarlaEnv(gym.Env):
 
     def manejarSensorSemantico (self, semantico):
         semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
+        
+        altura, ancho = 128, 128  # Tamaño del sensor
+        img_eventos = np.zeros((altura, ancho), dtype=np.uint8)
+
+        # Llenar la imagen con eventos (simplificado)
+        for evento in semantico:
+            x, y, p = evento.x, evento.y, evento.polarity
+            img_eventos[y, x] += 1  # Contamos eventos (sin distinguir polaridad)
+
+        # Asegurar valores dentro de 0-255
+        img_eventos = np.clip(img_eventos, 0, 255)
+
+        
+        if self.FrameActual is None:
+            self.FrameActual = semantico
 
 
 
@@ -285,8 +254,6 @@ class CarlaEnv(gym.Env):
             for actor in reversed(self.listaActores):
                 if actor.is_alive:
                     actor.destroy()
-                if actor in self.listaCocheAutonomo:
-                    self.listaCocheAutonomo.remove(actor)
             self.listaActores.clear()
             print("Se ha vaciado toda la lista de actores")
         else:
@@ -360,6 +327,7 @@ class CarlaEnv(gym.Env):
             return None
         else:
             print("Sensor de colision spawneado")
+            self.sensorColision = sensorColision
 
 
         #Spawneamos sensor de invasion de linea
@@ -404,7 +372,6 @@ class CarlaEnv(gym.Env):
         sensorSemantico.set_attribute('image_size_x', '300')
         sensorSemantico.set_attribute('image_size_y', '300')
         sensorSemantico.set_attribute('fov', '70')
-        sensorSemantico.set_attribute('sensor_tick', '2.0')
         sensorSemantico = world.try_spawn_actor(sensorSemantico, carla.Transform(carla.Location(x=0, z=2.5)), attach_to=vehiculoAutonomo)
         self.listaActores.append(sensorSemantico)
         if sensorSemantico is None:
@@ -420,12 +387,12 @@ class CarlaEnv(gym.Env):
 
         #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
         camara.listen(lambda image: self.manejarSensorCamara(world, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
-        #sensorColision.listen(lambda colision: env.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision
+        sensorColision.listen(lambda colision: self.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision
         sensorInvasion.listen(lambda invasion: self.manejarSensorLinea(invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
         sensorObstaculos.listen(lambda obstaculo: self.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
         
         #sensorLidar.listen(lambda lidar: env.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-        #sensorSemantico.listen(lambda semantico: env.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
+        sensorSemantico.listen(lambda semantico: self.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
     
         return vehiculoAutonomo
         
