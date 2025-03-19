@@ -219,6 +219,7 @@ class CarlaEnv(gym.Env):
     
     #||||||||||||||||||||||||||||||||||||||||||||||||||||||||
     #Funciones para manejar los sensores del coche autonomo
+    #||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
     def manejarSensorLinea(self, invasion):
         if 2 not in self.cache and 3 not in self.cache and 4 not in self.cache:
@@ -273,6 +274,8 @@ class CarlaEnv(gym.Env):
         semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
 
 
+
+
     #|||||||||||||||||||||||||||||||||||||||||||||||||||||||
     #Funciones auxiliares
     #|||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -289,18 +292,6 @@ class CarlaEnv(gym.Env):
         else:
             print("No hay ningun actor para destruir")
 
-    #Setter coche autonomo
-    def setCocheAutonomo(self, vehiculo):
-        self.cocheAutonomo = vehiculo
-        self.ultimaPosicion = self.cocheAutonomo.get_location()
-        self.posicionInicial = self.cocheAutonomo.get_location()
-        self.sensorColisionb = self.blueprint_library.find('sensor.other.collision')
-
-    def setCliente(self, cliente):
-        self.cliente = carla.Client('localhost', 2000)
-        self.world = self.cliente.get_world()
-        self.blueprint_library = self.world.get_blueprint_library()
-        self.puntosSpawn = self.world.get_map().get_spawn_points()
 
     #Funcion que mueve el coche a la posicion inicial y setea el sensor de colision
     def moverCochePosicionIncial(self):

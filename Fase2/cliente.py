@@ -31,145 +31,8 @@ except IndexError:
 
 import carla
 
-# |||||| Listas con todos los actores ||||||||
 
-listaActores = [] #Se añaden todos los actores
-listaCocheAutonomo = [] #Se añade todos los sensores del coche autonomo y el coche autonomo para poder ser borrados
-listaNPC = [] #Se añaden todos los sensores de los NPC y los NPC para poder ser borrados
-
-
-
-# ||||||| Funcion para spawnear el coche autonomo y añadirle los sensores necesarios ||||||||||
-
-def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mundo y la libreria de blueprints para poder spawnear los actores 
-
-    print("Empezamos a spawnear el coche autonomo")
-
-    #Comenzamos spawneado el vehículo, en caso de que no se pueda spawnear en el punto deseado se intentará en otro
-    vehiculoAutonomo = None
-    for transform in world.get_map().get_spawn_points():
-        vehiculoAutonomo = world.try_spawn_actor(blueprint_library.filter('vehicle.*.*')[0], transform)
-        if vehiculoAutonomo is None:
-            print("Spawn point ocupado, probando otro...")
-        else:
-            print("Vehículo spawneado exitosamente")
-            break
-
-    listaActores.append(vehiculoAutonomo)
-    listaCocheAutonomo.append(vehiculoAutonomo)
-
-    #||||||||||||||||||||||||||||
-    #|||||||| Sensores ||||||||||
-    #||||||||||||||||||||||||||||
-
-    #Spawneamos camara para ver vehiculo
-    camarab = blueprint_library.find('sensor.camera.rgb')
-    camarab.set_attribute('image_size_x', '800')
-    camarab.set_attribute('image_size_y', '600')
-    camarab.set_attribute('fov', '90')
-    camara = world.try_spawn_actor(blueprint_library.find('sensor.camera.rgb'),  carla.Transform(carla.Location(x=-7, z=3)), attach_to=vehiculoAutonomo)
-    listaActores.append(camara)
-    listaCocheAutonomo.append(camara)
-    if camara is None:
-        print("No se ha podido spawnear la camara")
-        return None
-    else:
-        print("Camara spawneada")
-
-
-    #Spawneamos sensor de colision
-    sensorColisionb = blueprint_library.find('sensor.other.collision')
-    sensorColision = world.try_spawn_actor(sensorColisionb, carla.Transform(), attach_to=vehiculoAutonomo)
-    listaActores.append(sensorColision)
-    listaCocheAutonomo.append(sensorColision)
-    if sensorColision is None:
-        print("No se ha podido spawnear el sensor de colision")
-        return None
-    else:
-        print("Sensor de colision spawneado")
-
-
-    #Spawneamos sensor de invasion de linea
-    sensorInvasionb = blueprint_library.find('sensor.other.lane_invasion')
-    sensorInvasion = world.try_spawn_actor(sensorInvasionb, carla.Transform(), attach_to=vehiculoAutonomo)
-    listaActores.append(sensorInvasion)
-    listaCocheAutonomo.append(sensorInvasion)
-    if sensorInvasion is None:
-        print("No se ha podido spawnear el sensor de invasion de linea")
-        return None
-    else:
-        print("Sensor de invasion de linea spawneado")
-
-
-    #Spawneamos sensor de obstaculos
-    sensorObstaculosb = blueprint_library.find('sensor.other.obstacle')
-    sensorObstaculosb.set_attribute('distance', '20')
-    sensorObstaculosb.set_attribute('hit_radius', '0')
-    sensorObstaculosb.set_attribute('only_dynamics', 'True')
-    sensorObstaculosb.set_attribute('sensor_tick', '1.0')
-    sensorObstaculos = world.try_spawn_actor(sensorObstaculosb, carla.Transform(), attach_to=vehiculoAutonomo)
-    listaActores.append(sensorObstaculos)
-    listaCocheAutonomo.append(sensorObstaculos)
-    if sensorObstaculos is None:
-        print("No se ha podido spawnear el sensor de obstaculos")
-        return None
-    else:
-        print("Sensor de obstaculos spawneado")
-
-
-    #Spawneamos sensor lidar
-    sensorLidarb = blueprint_library.find('sensor.lidar.ray_cast')
-    sensorLidarb.set_attribute('sensor_tick', '1.0')
-    sensorLidar = world.try_spawn_actor(sensorLidarb, carla.Transform(carla.Location(x=0, z=2.5)), attach_to=vehiculoAutonomo)
-    listaActores.append(sensorLidar)
-    listaCocheAutonomo.append(sensorLidar)
-    if sensorLidar is None:
-        print("No se ha podido spawnear el sensor Lidar")
-        return None
-    else:
-        print("Sensor Lidar spawneado")
-
-    #Spawneamos sensor semantico
-    sensorSemantico = blueprint_library.find('sensor.camera.semantic_segmentation')
-    sensorSemantico.set_attribute('image_size_x', '300')
-    sensorSemantico.set_attribute('image_size_y', '300')
-    sensorSemantico.set_attribute('fov', '70')
-    sensorSemantico.set_attribute('sensor_tick', '2.0')
-    sensorSemantico = world.try_spawn_actor(sensorSemantico, carla.Transform(carla.Location(x=0, z=2.5)), attach_to=vehiculoAutonomo)
-    listaActores.append(sensorSemantico)
-    listaCocheAutonomo.append(sensorSemantico)
-    if sensorSemantico is None:
-        print("No se ha podido spawnear el sensor semantico")
-        return None
-    else:
-        print("Sensor semantico spawneado")
-
-
-    #||||||||||||||||||||||
-    #Activamos los sensores
-    #||||||||||||||||||||||
-
-    #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
-    camara.listen(lambda image: env.manejarSensorCamara(world, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
-    #sensorColision.listen(lambda colision: env.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision
-    sensorInvasion.listen(lambda invasion: env.manejarSensorLinea(invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
-    sensorObstaculos.listen(lambda obstaculo: env.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-    
-    #sensorLidar.listen(lambda lidar: env.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-    #sensorSemantico.listen(lambda semantico: env.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-   
-    return vehiculoAutonomo
-
-
-
-# |||||||| Funciones auxiliares ||||||||||
-
-
-def initialize_q_table(state_space, action_space):
-  Qtable = np.zeros((state_space, action_space))
-  return Qtable
-
-
+listaNPC = []
 
 #||||||||||||||||||||||||||||||||||||||||||||||||
 #||||||||||||||||||||||||||||||||||||||||||||||||
@@ -186,41 +49,12 @@ def main () :
         cliente = carla.Client('localhost', 2000)
         cliente.set_timeout(15.0)
         cliente.load_world('Town03') #Cargamos la cuidad que deseemos
-        world = cliente.get_world()
-        blueprint_library = world.get_blueprint_library()
 
         #Incializamos el entorno de gym
         env = gym.make('CarlaEnviroment')
         
-        state_space = env.observation_space.n
-        action_space = env.action_space.n
-
-        #Inicializamos Qtable
-        Qtable = initialize_q_table(state_space, action_space)
 
         print("Conexion con el servidor establecida y todas las variables principales inicializadas")
-
-
-        #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
-
-        # Parametros de entrenamiento
-        n_training_episodes = 4005  # Total training episodes
-        learning_rate = 0.1         # Learning rate
-
-        # Parametros de evaluación
-        n_eval_episodes = 100        # Total number of test episodes
-
-        # Parametros de episodio
-        max_steps = 200              # Max steps per episode
-        gamma = 0.10                 # Discounting rate 
-
-        # Parametros de exploración
-        max_epsilon = 1.0             # Exploration probability at start
-        min_epsilon = 0.05            # Minimum exploration probability
-        decay_rate = 0.0020           # Exponential decay rate for exploration prob
-
-        #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
 
 
         #||||| Paso 2, Spawneo de trafico para poder realizar la simulacion ||||||||
@@ -263,15 +97,15 @@ def main () :
 
 
     except KeyboardInterrupt:
-        destruirActores()
+        destruirNPC()
         env.close()
 
     except Exception as e:
         print("Error: " + str(e))
-        destruirActores()
+        destruirNPC()
         env.close() 
 
-
+    
 
 
 # |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -290,6 +124,9 @@ def destruirNPC():
         print("Se ha vaciado toda la lista de NPC")
     else:
         print("No hay ningun NPC para destruir")
+
+
+""""
 
 def destruirCocheAutonomo():
     if len(listaCocheAutonomo) > 0:
@@ -323,7 +160,7 @@ def destruirActores():
         print("No hay ningun actor para destruir")
 
 
-
+"""
 
 #Para que se ejecute el main cuando se inicia el programa
 
@@ -332,7 +169,7 @@ if __name__ == '__main__':
     try:
         main()  
     finally:
-        destruirActores()
+        destruirNPC()
         print("Done")
 
 
