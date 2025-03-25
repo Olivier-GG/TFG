@@ -3,24 +3,22 @@ import random
 import json
 from stable_baselines3 import DQN
 import os
+import torch
 
 
 def train_agent(env):
 
-   # Where to store trained model and logs
+    #Creamos los directorios para almacenar la informacion
     model_dir = "models"
     log_dir = "logs"
     os.makedirs(model_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
 
-    # Use Advantage Actor Critic (A2C) algorithm.
-    # Use MlpPolicy for observation space 1D vector.
-    model = DQN('CnnPolicy', env, verbose=1, tensorboard_log=log_dir, target_update_interval=5000, buffer_size=5000) # si no pones cuda automaticamente se pone en gpu
+    #No encuentra la grafica porque las ultimas versiones de CUDA no funcionan
+    print("CUDA disponible:", torch.cuda.is_available())
    
-    # This loop will keep training until you stop it with Ctr-C.
-    # Start another cmd prompt and launch Tensorboard: tensorboard --logdir logs
-    # Once Tensorboard is loaded, it will print a URL. Follow the URL to see the status of the training.
-    # Stop the training when you're satisfied with the status.
+    model = DQN('CnnPolicy', env, verbose=1, tensorboard_log=log_dir, target_update_interval=5000, buffer_size=30000, device='cuda') # si no pones cuda automaticamente se pone en gpu
+   
     TIMESTEPS = 500000 # 200 * numero de episodios para compensar 
     iters = 0
 
