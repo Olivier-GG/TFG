@@ -21,13 +21,11 @@ def train_agent(env):
     # Start another cmd prompt and launch Tensorboard: tensorboard --logdir logs
     # Once Tensorboard is loaded, it will print a URL. Follow the URL to see the status of the training.
     # Stop the training when you're satisfied with the status.
-    TIMESTEPS = 1000 # 200 * numero de episodios para compensar 
+    TIMESTEPS = 500000 # 200 * numero de episodios para compensar 
     iters = 0
-    while True:
-        iters += 1
 
-        model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False) # train
-        model.save(f"{model_dir}/dqn_{TIMESTEPS*iters}") # Save a trained model every TIMESTEPS
+    model.learn(total_timesteps=TIMESTEPS, target_update_interval=5000) # train
+    model.save(f"{model_dir}/dqn_{TIMESTEPS*iters}") # Save a trained model every TIMESTEPS
         
     print("Entrenamiento finalizado, puede proceder a evaluarlo")
 
@@ -37,7 +35,7 @@ def train_agent(env):
 def evaluate_agent(env):
 
     # Load model
-    model = DQN.load('models/a2c_2000', env=env)
+    model = DQN.load('models/dqn_2000', env=env)
 
     # Run a test
     obs = env.reset()[0]

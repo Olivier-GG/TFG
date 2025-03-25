@@ -46,11 +46,13 @@ class CarlaEnv(gym.Env):
         self.ultimaPosicion = None
         self.VelocidadVehiculo = 0
         self.FrameActual = None
+        self.libre = True
 
         self.cocheAutonomo = self.spawnearVehiculoAutonomo(self.world, self.blueprint_library)
         
         self.action_space = spaces.Discrete(10)  # Puede ser aceleración, frenado, dirección, etc.
-        self.observation_space = spaces.Box(low=0, high=255, shape=(N_CHANNELS, HEIGHT, WIDTH), dtype=np.uint8) # Todas las combinaciones de los  (linea y obstaculos), porque el de colisión es para acabar el episodio
+
+        self.observation_space = spaces.Box(0,255,(3,300,300),np.uint8) # Todas las combinaciones de los  (linea y obstaculos), porque el de colisión es para acabar el episodio
 
 
     def reset(self, seed=None, options=None):
@@ -91,11 +93,7 @@ class CarlaEnv(gym.Env):
         # Obtener la observación actual (por ejemplo, imagen de la cámara)
         obs, info = self.get_observation()
 
-        # Calcular la recompensa (esto depende de tu objetivo específico)
-        if obs == 16: #Si es este estado no puede haber recompensa negativa por chocar, es un error a la hora de respawnear
-            reward = 0
-        else:
-            reward = self.calcularRecompensa()  # Aquí va la lógica de recompensa
+        reward = self.calcularRecompensa()  # Aquí va la lógica de recompensa
         
         # Verificar si el episodio ha terminado (por ejemplo, si el coche ha chocado)
         done = self.terminated()  # Lógica para determinar cuándo se acaba el episodio
@@ -120,11 +118,11 @@ class CarlaEnv(gym.Env):
         print("Obteniendo observacion")
         dic = {"info": "información"}
 
-        while self.FrameActual is None:
-            time.sleep(0.1)
+        while self.libre and self.FrameActual is None:
+            time.sleep(0.05)
 
         obs = self.FrameActual
-        self.FrameActual = None
+        self.libre = True
 
         return obs, dic
 
@@ -225,23 +223,25 @@ class CarlaEnv(gym.Env):
         print(data)  # Imprimir los primeros 5 puntos para ver el formato
 
     def manejarSensorSemantico (self, semantico):
-        semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
-        
-        altura, ancho = 128, 128  # Tamaño del sensor
-        img_eventos = np.zeros((altura, ancho), dtype=np.uint8)
+        #semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
+        if self.libre:
 
-        # Llenar la imagen con eventos (simplificado)
-        for evento in semantico:
-            x, y, p = evento.x, evento.y, evento.polarity
-            img_eventos[y, x] += 1  # Contamos eventos (sin distinguir polaridad)
+            self.libre = False
+            # Convertir la imagen del sensor a un array de NumPy
+            img_array = np.frombuffer(semantico.raw_data, dtype=np.uint8)
+            
+            # Redimensionar la imagen según las dimensiones del sensor
+            img_array = img_array.reshape((semantico.height, semantico.width, 4))  # Última dimensión: BGRA
 
-        # Asegurar valores dentro de 0-255
-        img_eventos = np.clip(img_eventos, 0, 255)
+            # Convertir a RGB eliminando el canal alfa
+            img_array = img_array[:, :, :3]
 
-        
-        if self.FrameActual is None:
-            self.FrameActual = semantico
+            # Transponer la imagen para que tenga la forma (N_CHANNELS, HEIGHT, WIDTH)
+            img_array = np.transpose(img_array, (2, 0, 1))
 
+            
+            self.FrameActual = img_array
+            semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
 
 
 

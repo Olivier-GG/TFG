@@ -47,7 +47,7 @@ def main () :
         #|||| Paso 1, conectar el cliente con el servidor e inicializar enviroment ||||||||
         
         cliente = carla.Client('localhost', 2000)
-        cliente.set_timeout(15.0)
+        cliente.set_timeout(20.0)
         cliente.load_world('Town03') #Cargamos la cuidad que deseemos
 
         #Incializamos el entorno de gym
