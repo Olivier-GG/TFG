@@ -15,7 +15,7 @@ def train_agent(env):
 
     # Use Advantage Actor Critic (A2C) algorithm.
     # Use MlpPolicy for observation space 1D vector.
-    model = DQN('CnnPolicy', env, verbose=1, tensorboard_log=log_dir) # si no pones cuda automaticamente se pone en gpu
+    model = DQN('CnnPolicy', env, verbose=1, tensorboard_log=log_dir, target_update_interval=5000, buffer_size=5000) # si no pones cuda automaticamente se pone en gpu
    
     # This loop will keep training until you stop it with Ctr-C.
     # Start another cmd prompt and launch Tensorboard: tensorboard --logdir logs
@@ -24,7 +24,7 @@ def train_agent(env):
     TIMESTEPS = 500000 # 200 * numero de episodios para compensar 
     iters = 0
 
-    model.learn(total_timesteps=TIMESTEPS, target_update_interval=5000) # train
+    model.learn(total_timesteps=TIMESTEPS) # train
     model.save(f"{model_dir}/dqn_{TIMESTEPS*iters}") # Save a trained model every TIMESTEPS
         
     print("Entrenamiento finalizado, puede proceder a evaluarlo")

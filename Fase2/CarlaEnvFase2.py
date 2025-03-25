@@ -115,7 +115,6 @@ class CarlaEnv(gym.Env):
 
     def get_observation(self):
 
-        print("Obteniendo observacion")
         dic = {"info": "información"}
 
         while self.libre and self.FrameActual is None:
