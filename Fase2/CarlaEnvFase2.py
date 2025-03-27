@@ -222,7 +222,7 @@ class CarlaEnv(gym.Env):
         print(data)  # Imprimir los primeros 5 puntos para ver el formato
 
     def manejarSensorSemantico (self, semantico):
-        #semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
+        
         if self.libre:
 
             self.libre = False
@@ -240,7 +240,7 @@ class CarlaEnv(gym.Env):
 
             
             self.FrameActual = img_array
-            semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
+            #semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
 
 
 
