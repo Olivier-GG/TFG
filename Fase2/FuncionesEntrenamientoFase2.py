@@ -13,18 +13,19 @@ def train_agent(env):
     log_dir = "logs"
     os.makedirs(model_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
-
-    #No encuentra la grafica porque las ultimas versiones de CUDA no funcionan
-    print("CUDA disponible:", torch.cuda.is_available())
+    
+    model = DQN('CnnPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=30000)
    
-    model = DQN('CnnPolicy', env, verbose=1, tensorboard_log=log_dir, target_update_interval=5000, buffer_size=30000, device='cuda') # si no pones cuda automaticamente se pone en gpu
-   
-    TIMESTEPS = 500000 # 200 * numero de episodios para compensar 
-    iters = 0
+    # This loop will keep training until you stop it with Ctr-C.
+    # Start another cmd prompt and launch Tensorboard: tensorboard --logdir logs
+    # Once Tensorboard is loaded, it will print a URL. Follow the URL to see the status of the training.
+    # Stop the training when you're satisfied with the status.
+    TIMESTEPS = 300000 #Equivaldria a unos 3000 episodios de los anteirores
 
-    model.learn(total_timesteps=TIMESTEPS) # train
-    model.save(f"{model_dir}/dqn_{TIMESTEPS*iters}") # Save a trained model every TIMESTEPS
-        
+    model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, log_interval=1, progress_bar=True) # train
+    model.save(f"{model_dir}/dqnV1_300000") # Save a trained model every TIMESTEPS
+
+
     print("Entrenamiento finalizado, puede proceder a evaluarlo")
 
 

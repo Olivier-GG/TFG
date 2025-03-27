@@ -88,7 +88,7 @@ class CarlaEnv(gym.Env):
         else:
             self.cocheAutonomo.apply_control(carla.VehicleControl(brake=1.0, throttle=0.0, steer=0.0)) #Frenar
 
-        time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
+        time.sleep(0.15) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
 
         # Obtener la observación actual (por ejemplo, imagen de la cámara)
         obs, info = self.get_observation()
