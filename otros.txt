@@ -38,4 +38,6 @@ Pruebo entrenarlo con los siguientes parametros, estoy en el commit Se añaden m
 
 
 
-        cambiarlo a Dqn y no a2c con Cnn policy
+  falta stackear 3 frames y que funcione tensor
+
+  o alomejor usar el lidar y stackearlo en 3 para que tenga 3 dimensiones
