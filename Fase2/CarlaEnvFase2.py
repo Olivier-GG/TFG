@@ -54,12 +54,10 @@ class CarlaEnv(gym.Env):
         
         self.action_space = spaces.Discrete(10)  # Puede ser aceleración, frenado, dirección, etc.
 
+        # Definir el espacio de observación (Elegir el que se vaya a utilizar)
+        
+        self.observation_space = gym.spaces.Box(0, 255, (500,500), dtype=np.uint8)
         #self.observation_space = spaces.Box(0,255,(3,300,300),np.uint8) # Imagen RGB de 300x300 que me devuelve el sensor semantico
-
-        H, W, C = 256, 256, 1  # C=1 para imágenes en escala de grises, C=3 para RGB
-
-        # Definir el espacio de observación
-        self.observation_space = gym.spaces.Box(low=0, high=255, shape=(500,500), dtype=np.uint8)
 
 
     def reset(self, seed=None, options=None):
@@ -125,22 +123,29 @@ class CarlaEnv(gym.Env):
 
         dic = {"info": "información"}
 
+        #|||||||||||||||||||||||||||||||||||||||||
+        # Saca la observacion del sensor semantico
+
         """
-        # Obtener la imagen del sensor semántico
         while self.libre and self.FrameActual is None:
             time.sleep(0.05)
 
         obs = self.FrameActual
         self.libre = True
 
-        """    
+        """
+        #|||||||||||||||||||||||||||||||||||||||||||||
 
+        # Saca la observacion del LIDAR 
         while self.nubeDePuntosLidar is None:
             time.sleep(0.05)
+            print("Esperando a que el lidar genere la nube de puntos")
 
         obs = self.nubeDePuntosLidar #Usamos la nube de puntos del lidar como observacion
 
         self.nubeDePuntosLidar = None #Limpiamos la nube de puntos para que no se acumulen los datos
+
+        #||||||||||||||||||||||||||||||||||||||||||||
 
         return obs, dic
 
@@ -280,6 +285,8 @@ class CarlaEnv(gym.Env):
 
         self.nubeDePuntosLidar = bev_image
 
+
+
     def manejarSensorSemantico (self, semantico):
         
         if self.libre:
@@ -297,8 +304,9 @@ class CarlaEnv(gym.Env):
             # Transponer la imagen para que tenga la forma (N_CHANNELS, HEIGHT, WIDTH)
             img_array = np.transpose(img_array, (2, 0, 1))
 
-            
             self.FrameActual = img_array
+
+            # Guardar la imagen en disco (opcional)
             #semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
 
 
@@ -442,15 +450,20 @@ class CarlaEnv(gym.Env):
         #Activamos los sensores
         #||||||||||||||||||||||
 
-        #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
+        
         camara.listen(lambda image: self.manejarSensorCamara(world, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
         sensorColision.listen(lambda colision: self.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision
         sensorInvasion.listen(lambda invasion: self.manejarSensorLinea(invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
         sensorObstaculos.listen(lambda obstaculo: self.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
         
+        #Seleccionar el que se vaya a utilizar de los 2 para asi no tener problemas de rendimiento
         sensorLidar.listen(lambda lidar: self.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-        #sensorSemantico.listen(lambda semantico: self.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
+        sensorSemantico.listen(lambda semantico: self.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
     
+
+        #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
+
+
         return vehiculoAutonomo
         
             
