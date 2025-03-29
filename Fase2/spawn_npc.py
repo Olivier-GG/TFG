@@ -181,9 +181,7 @@ def spawnearCoches(coches, peatones):
             .then(SetVehicleLightState(FutureActor, light_state)))
 
     for response in client.apply_batch_sync(batch, synchronous_master):
-        if response.error:
-            logging.error(response.error)
-        else:
+        if not response.error:
             vehicles_list.append(response.actor_id)
 
     # -------------
@@ -223,9 +221,7 @@ def spawnearCoches(coches, peatones):
     results = client.apply_batch_sync(batch, True)
     walker_speed2 = []
     for i in range(len(results)):
-        if results[i].error:
-            logging.error(results[i].error)
-        else:
+        if not results[i].error:
             walkers_list.append({"id": results[i].actor_id})
             walker_speed2.append(walker_speed[i])
     walker_speed = walker_speed2
@@ -236,9 +232,7 @@ def spawnearCoches(coches, peatones):
         batch.append(SpawnActor(walker_controller_bp, carla.Transform(), walkers_list[i]["id"]))
     results = client.apply_batch_sync(batch, True)
     for i in range(len(results)):
-        if results[i].error:
-            logging.error(results[i].error)
-        else:
+        if not results[i].error:
             walkers_list[i]["con"] = results[i].actor_id
     # 4. we put altogether the walkers and controllers id to get the objects from their id
     for i in range(len(walkers_list)):

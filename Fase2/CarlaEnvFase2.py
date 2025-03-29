@@ -46,7 +46,6 @@ class CarlaEnv(gym.Env):
         self.ultimaPosicion = None
         self.VelocidadVehiculo = 0
         self.FrameActual = None
-        self.libre = True
         self.temporizador = 0
         self.nubeDePuntosLidar = None
 
@@ -127,11 +126,13 @@ class CarlaEnv(gym.Env):
         # Saca la observacion del sensor semantico
 
         """
-        while self.libre and self.FrameActual is None:
+        while self.FrameActual is None:
             time.sleep(0.05)
+            print("Esperando a que el lidar genere la nube de puntos")
 
         obs = self.FrameActual
-        self.libre = True
+        self.FrameActual = None
+
 
         """
         #|||||||||||||||||||||||||||||||||||||||||||||
@@ -289,25 +290,22 @@ class CarlaEnv(gym.Env):
 
     def manejarSensorSemantico (self, semantico):
         
-        if self.libre:
+        # Convertir la imagen del sensor a un array de NumPy
+        img_array = np.frombuffer(semantico.raw_data, dtype=np.uint8)
+        
+        # Redimensionar la imagen según las dimensiones del sensor
+        img_array = img_array.reshape((semantico.height, semantico.width, 4))  # Última dimensión: BGRA
 
-            self.libre = False
-            # Convertir la imagen del sensor a un array de NumPy
-            img_array = np.frombuffer(semantico.raw_data, dtype=np.uint8)
-            
-            # Redimensionar la imagen según las dimensiones del sensor
-            img_array = img_array.reshape((semantico.height, semantico.width, 4))  # Última dimensión: BGRA
+        # Convertir a RGB eliminando el canal alfa
+        img_array = img_array[:, :, :3]
 
-            # Convertir a RGB eliminando el canal alfa
-            img_array = img_array[:, :, :3]
+        # Transponer la imagen para que tenga la forma (N_CHANNELS, HEIGHT, WIDTH)
+        img_array = np.transpose(img_array, (2, 0, 1))
 
-            # Transponer la imagen para que tenga la forma (N_CHANNELS, HEIGHT, WIDTH)
-            img_array = np.transpose(img_array, (2, 0, 1))
+        self.FrameActual = img_array
 
-            self.FrameActual = img_array
-
-            # Guardar la imagen en disco (opcional)
-            #semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
+        # Guardar la imagen en disco (opcional)
+        #semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
 
 
 
