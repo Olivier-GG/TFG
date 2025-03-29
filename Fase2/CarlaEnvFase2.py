@@ -47,6 +47,7 @@ class CarlaEnv(gym.Env):
         self.VelocidadVehiculo = 0
         self.FrameActual = None
         self.libre = True
+        self.temporizador = 0
 
         self.cocheAutonomo = self.spawnearVehiculoAutonomo(self.world, self.blueprint_library)
         
@@ -59,6 +60,7 @@ class CarlaEnv(gym.Env):
         
         super().reset(seed=seed)
 
+        self.temporizador = time.time() #iniciamos el temporizador 
         self.moverCochePosicionIncial()
         self.cache = [] #Limpiamos la cache por si acaso
         obs, info = self.get_observation()
@@ -144,6 +146,12 @@ class CarlaEnv(gym.Env):
         self.ultimaPosicion = self.cocheAutonomo.get_location()
         return acu
 
+    def terminated(self):
+        if 0 in self.cache or time.time() - self.temporizador > 90: #El episodio termina si el coche choca o si pasa 90 segundos
+            return True
+        else:
+            return False
+
     def render(self, mode='human'):
         # Renderizar el entorno para visualizarlo (si es necesario)
         info, obs = self.get_observation()
@@ -161,11 +169,7 @@ class CarlaEnv(gym.Env):
         self.destruirActores()
         print("Cerrando entorno")
 
-    def terminated(self):
-        if 0 in self.cache:
-            return True
-        else:
-            return False
+
 
     
     #||||||||||||||||||||||||||||||||||||||||||||||||||||||||
