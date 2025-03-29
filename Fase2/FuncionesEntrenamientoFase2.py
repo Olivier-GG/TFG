@@ -14,12 +14,11 @@ def train_agent(env):
     os.makedirs(model_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
     
-    model = DQN('CnnPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=30000)
-   
-    # This loop will keep training until you stop it with Ctr-C.
-    # Start another cmd prompt and launch Tensorboard: tensorboard --logdir logs
-    # Once Tensorboard is loaded, it will print a URL. Follow the URL to see the status of the training.
-    # Stop the training when you're satisfied with the status.
+    #model = DQN('CnnPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=30000) #Utilizado para la camara semantica
+    model = DQN('MlpPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=30000) #Utilizado para el LIDAR
+
+    # Puedes ver los resulatdos que va dando el entrenamiento con el comando -> tensorboard --logdir logs
+
     TIMESTEPS = 300000 #Equivaldria a unos 3000 episodios de los anteirores
 
     model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, log_interval=1, progress_bar=True) # train

@@ -48,12 +48,18 @@ class CarlaEnv(gym.Env):
         self.FrameActual = None
         self.libre = True
         self.temporizador = 0
+        self.nubeDePuntosLidar = None
 
         self.cocheAutonomo = self.spawnearVehiculoAutonomo(self.world, self.blueprint_library)
         
         self.action_space = spaces.Discrete(10)  # Puede ser aceleración, frenado, dirección, etc.
 
-        self.observation_space = spaces.Box(0,255,(3,300,300),np.uint8) # Todas las combinaciones de los  (linea y obstaculos), porque el de colisión es para acabar el episodio
+        #self.observation_space = spaces.Box(0,255,(3,300,300),np.uint8) # Imagen RGB de 300x300 que me devuelve el sensor semantico
+
+        H, W, C = 256, 256, 1  # C=1 para imágenes en escala de grises, C=3 para RGB
+
+        # Definir el espacio de observación
+        self.observation_space = gym.spaces.Box(low=0, high=255, shape=(500,500), dtype=np.uint8)
 
 
     def reset(self, seed=None, options=None):
@@ -90,7 +96,7 @@ class CarlaEnv(gym.Env):
         else:
             self.cocheAutonomo.apply_control(carla.VehicleControl(brake=1.0, throttle=0.0, steer=0.0)) #Frenar
 
-        time.sleep(0.15) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
+        time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
 
         # Obtener la observación actual (por ejemplo, imagen de la cámara)
         obs, info = self.get_observation()
@@ -119,11 +125,22 @@ class CarlaEnv(gym.Env):
 
         dic = {"info": "información"}
 
+        """
+        # Obtener la imagen del sensor semántico
         while self.libre and self.FrameActual is None:
             time.sleep(0.05)
 
         obs = self.FrameActual
         self.libre = True
+
+        """    
+
+        while self.nubeDePuntosLidar is None:
+            time.sleep(0.05)
+
+        obs = self.nubeDePuntosLidar #Usamos la nube de puntos del lidar como observacion
+
+        self.nubeDePuntosLidar = None #Limpiamos la nube de puntos para que no se acumulen los datos
 
         return obs, dic
 
@@ -220,10 +237,48 @@ class CarlaEnv(gym.Env):
         cv2.waitKey(100)
 
     def manejarSensorLidar(self, lidar):
+       
+        """
         data = np.frombuffer(lidar.raw_data, dtype=np.float32)  # Convertir a numpy
         data = np.reshape(data, (-1, 4))  # Cada punto tiene (X, Y, Z, Intensidad)
         print(f"LiDAR recibió {data.shape[0]} puntos")
         print(data)  # Imprimir los primeros 5 puntos para ver el formato
+        """
+
+        lidar_points = np.frombuffer(lidar.raw_data, dtype=np.float32)  # Convertir a numpy
+        lidar_points = np.reshape(lidar_points, (-1, 4))  # Cada punto tiene (X, Y, Z, Intensidad)
+        X_MIN, X_MAX = -50, 50   # Rango en X
+        Y_MIN, Y_MAX = -50, 50   # Rango en Y
+        Z_MIN, Z_MAX = -2, 2     # Rango en Z (para filtrar puntos)
+
+        # Definir la resolución de la imagen (pixeles por metro)
+        RESOLUTION = 0.2  # Cada pixel representa 0.2m
+
+        # Calcular tamaño de la imagen
+        IMAGE_WIDTH = int((X_MAX - X_MIN) / RESOLUTION)
+        IMAGE_HEIGHT = int((Y_MAX - Y_MIN) / RESOLUTION)
+
+                # Filtrar puntos dentro de los límites definidos
+        mask = (lidar_points[:, 0] >= X_MIN) & (lidar_points[:, 0] <= X_MAX) & \
+            (lidar_points[:, 1] >= Y_MIN) & (lidar_points[:, 1] <= Y_MAX) & \
+            (lidar_points[:, 2] >= Z_MIN) & (lidar_points[:, 2] <= Z_MAX)
+        lidar_points = lidar_points[mask]
+
+        # Convertir coordenadas X, Y a índices de imagen
+        x_img = ((lidar_points[:, 0] - X_MIN) / RESOLUTION).astype(np.int32)
+        y_img = ((lidar_points[:, 1] - Y_MIN) / RESOLUTION).astype(np.int32)
+
+        # Normalizar la intensidad (0 a 255)
+        intensity = lidar_points[:, 3]
+        intensity = np.clip(intensity * 255, 0, 255).astype(np.uint8)
+
+        # Crear imagen BEV en blanco
+        bev_image = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH), dtype=np.uint8)
+
+        # Colocar los puntos en la imagen BEV
+        bev_image[y_img, x_img] = intensity  
+
+        self.nubeDePuntosLidar = bev_image
 
     def manejarSensorSemantico (self, semantico):
         
@@ -361,7 +416,6 @@ class CarlaEnv(gym.Env):
 
         #Spawneamos sensor lidar
         sensorLidarb = blueprint_library.find('sensor.lidar.ray_cast')
-        sensorLidarb.set_attribute('sensor_tick', '1.0')
         sensorLidar = world.try_spawn_actor(sensorLidarb, carla.Transform(carla.Location(x=0, z=2.5)), attach_to=vehiculoAutonomo)
         self.listaActores.append(sensorLidar)
         if sensorLidar is None:
@@ -394,8 +448,8 @@ class CarlaEnv(gym.Env):
         sensorInvasion.listen(lambda invasion: self.manejarSensorLinea(invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
         sensorObstaculos.listen(lambda obstaculo: self.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
         
-        #sensorLidar.listen(lambda lidar: env.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-        sensorSemantico.listen(lambda semantico: self.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
+        sensorLidar.listen(lambda lidar: self.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
+        #sensorSemantico.listen(lambda semantico: self.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
     
         return vehiculoAutonomo
         
