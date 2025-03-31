@@ -56,7 +56,7 @@ class CarlaEnv(gym.Env):
         # Definir el espacio de observación (Elegir el que se vaya a utilizar)
         
         self.observation_space = gym.spaces.Box(0, 255, (500,500), dtype=np.uint8)
-        #self.observation_space = spaces.Box(0,255,(3,300,300),np.uint8) # Imagen RGB de 300x300 que me devuelve el sensor semantico
+        #self.observation_space = spaces.Box(0,255,(300,300,3),np.uint8) # Imagen RGB de 300x300 que me devuelve el sensor semantico
 
 
     def reset(self, seed=None, options=None):
@@ -289,24 +289,26 @@ class CarlaEnv(gym.Env):
 
 
     def manejarSensorSemantico (self, semantico):
-        
-        # Convertir la imagen del sensor a un array de NumPy
+
+        # Convierte la informacion de bytes a un array
         img_array = np.frombuffer(semantico.raw_data, dtype=np.uint8)
         
-        # Redimensionar la imagen según las dimensiones del sensor
+        # Le da la resolucion a la imagen
         img_array = img_array.reshape((semantico.height, semantico.width, 4))  # Última dimensión: BGRA
 
-        # Convertir a RGB eliminando el canal alfa
-        img_array = img_array[:, :, :3]
+        #Elimino la amplitud ya que no sirve de nada
+        img_array = img_array[:, :, :3] #RGB
+
+        #para stackear frames frame_unido = np.stack((frame1, frame2, frame3), axis=-1)  # Agrega como canales
 
         # Transponer la imagen para que tenga la forma (N_CHANNELS, HEIGHT, WIDTH)
-        img_array = np.transpose(img_array, (2, 0, 1))
+        #img_array = np.transpose(img_array, (2, 0, 1))
 
         self.FrameActual = img_array
 
         # Guardar la imagen en disco (opcional)
         #semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
-
+        #cv2.imwrite("imagenes/imagen_guardada.png", img_array)
 
 
     #|||||||||||||||||||||||||||||||||||||||||||||||||||||||

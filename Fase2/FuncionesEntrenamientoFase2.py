@@ -31,10 +31,10 @@ def train_agent(env):
 
 
 # Evaluate the agent
-def evaluate_agent(env):
+def evaluate_agent(env, directory):
 
     # Load model
-    model = DQN.load('models/dqn_2000', env=env)
+    model = DQN.load(directory, env=env)
 
     # Run a test
     obs = env.reset()[0]

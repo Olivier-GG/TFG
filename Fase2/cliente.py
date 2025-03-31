@@ -40,6 +40,7 @@ listaNPC = []
 #||||||||||||||| MAIN |||||||||||||||||||||||||||
 #||||||||||||||||||||||||||||||||||||||||||||||||
 #||||||||||||||||||||||||||||||||||||||||||||||||
+#||||||||||||||||||||||||||||||||||||||||||||||||
 def main () :
 
     try:
@@ -47,7 +48,7 @@ def main () :
         #|||| Paso 1, conectar el cliente con el servidor e inicializar enviroment ||||||||
         
         cliente = carla.Client('localhost', 2000)
-        cliente.set_timeout(20.0)
+        cliente.set_timeout(20.0) #Establecemos el tiempo para establecer la conexion a 20 segundos, porque al cargar el mapa puede tardar unos pocdos segundos
         cliente.load_world('Town03') #Cargamos la cuidad que deseemos
 
         #Incializamos el entorno de gym
@@ -58,24 +59,23 @@ def main () :
 
         print("Conexion con el servidor establecida y todas las variables principales inicializadas")
 
-
         #||||| Paso 2, Spawneo de trafico para poder realizar la simulacion ||||||||
     
         print("\nProcedo a spawnear 30 coches y 10 peatones")
         
-        listaNPC.extend(spawnearCoches(30,10)) #Codigo de ejemplo carla 
+        listaNPC.extend(spawnearCoches(30,10)) #Codigo de ejemplo carla(posiblemente spawneen menos peatones, porque pueden ser que spawneen en un sitio que ya hay uno)
 
 
         # ||||||||||||| Paso 3, elegir si queremos evaluar o entrenar agente ||||||||||||||
 
-        print("\nIntroduce una 't' si quieres entrenar el agente o una 'e' si quieres evaluarlo(Seleccionar en el codigo que Qtable desea cargar -línea 221-): ")
+        print("\nIntroduce una 't' si quieres entrenar el agente o una 'e' si quieres evaluarlo (seleccionar modelo en línea 78 de cliente.py): ")
         eleccion = input()
 
         if eleccion == "e" or eleccion == "E":
 
             print("Evaluando agente...")
             
-            evaluate_agent(env)
+            evaluate_agent(env, 'models/dqn_2000')
 
             print("Evaluar agente completado")
 
