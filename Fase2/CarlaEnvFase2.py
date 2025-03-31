@@ -286,6 +286,8 @@ class CarlaEnv(gym.Env):
 
         self.nubeDePuntosLidar = bev_image
 
+        #cv2.imwrite("imagenes/imagen_lidar.png", bev_image)
+
 
 
     def manejarSensorSemantico (self, semantico):
@@ -304,7 +306,16 @@ class CarlaEnv(gym.Env):
         # Transponer la imagen para que tenga la forma (N_CHANNELS, HEIGHT, WIDTH)
         #img_array = np.transpose(img_array, (2, 0, 1))
 
+        #Esto la convierte en formato 300 300, ya se podrían stackear 3
+        gray_image = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
+        print(gray_image.shape)  # Debería ser (300, 300)
+        cv2.imshow('Grayscale Image', gray_image)
+        cv2.waitKey(1)
+
         self.FrameActual = img_array
+
+        
+        
 
         # Guardar la imagen en disco (opcional)
         #semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
