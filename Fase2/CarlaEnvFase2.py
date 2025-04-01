@@ -49,6 +49,7 @@ class CarlaEnv(gym.Env):
         self.temporizador = 0
         self.nubeDePuntosLidar = None
         self.bufferImagenes = [] 
+        self.bufferImagenesLidar = [] #Buffer para almacenar las imagenes del lidar
 
         self.cocheAutonomo = self.spawnearVehiculoAutonomo(self.world, self.blueprint_library)
         
@@ -56,7 +57,7 @@ class CarlaEnv(gym.Env):
 
         # Definir el espacio de observación (Elegir el que se vaya a utilizar)
         
-        #self.observation_space = gym.spaces.Box(0, 255, (500,500), dtype=np.uint8)
+        #self.observation_space = gym.spaces.Box(0, 255, (500,500,3), dtype=np.uint8)
         self.observation_space = spaces.Box(0,255,(300,300,3),np.uint8) # Imagen RGB de 300x300 que me devuelve el sensor semantico
 
 
@@ -126,7 +127,7 @@ class CarlaEnv(gym.Env):
         #|||||||||||||||||||||||||||||||||||||||||
         # Saca la observacion del sensor semantico
 
-        
+        """
         while self.FrameActual is None:
             time.sleep(0.05)
             print("Esperando a que el lidar genere la nube de puntos")
@@ -134,10 +135,10 @@ class CarlaEnv(gym.Env):
         obs = self.FrameActual
         self.FrameActual = None
 
-
+        """
         #|||||||||||||||||||||||||||||||||||||||||||||
 
-        """
+        
         # Saca la observacion del LIDAR 
         while self.nubeDePuntosLidar is None:
             time.sleep(0.05)
@@ -146,7 +147,8 @@ class CarlaEnv(gym.Env):
         obs = self.nubeDePuntosLidar #Usamos la nube de puntos del lidar como observacion
 
         self.nubeDePuntosLidar = None #Limpiamos la nube de puntos para que no se acumulen los datos
-        """
+        
+
         #||||||||||||||||||||||||||||||||||||||||||||
 
         return obs, dic
@@ -241,7 +243,7 @@ class CarlaEnv(gym.Env):
         img2 = img[:,:,:3]
 
         cv2.imshow("", img2)
-        cv2.waitKey(100)
+        cv2.waitKey(100) # Espera 100ms para que se vea la imagen
 
     def manejarSensorLidar(self, lidar):
        
@@ -254,8 +256,8 @@ class CarlaEnv(gym.Env):
 
         lidar_points = np.frombuffer(lidar.raw_data, dtype=np.float32)  # Convertir a numpy
         lidar_points = np.reshape(lidar_points, (-1, 4))  # Cada punto tiene (X, Y, Z, Intensidad)
-        X_MIN, X_MAX = -50, 50   # Rango en X
-        Y_MIN, Y_MAX = -50, 50   # Rango en Y
+        X_MIN, X_MAX = -30, 30   # Rango en X
+        Y_MIN, Y_MAX = -30, 30   # Rango en Y
         Z_MIN, Z_MAX = -2, 2     # Rango en Z (para filtrar puntos)
 
         # Definir la resolución de la imagen (pixeles por metro)
@@ -285,7 +287,12 @@ class CarlaEnv(gym.Env):
         # Colocar los puntos en la imagen BEV
         bev_image[y_img, x_img] = intensity  
 
-        self.nubeDePuntosLidar = bev_image
+        self.bufferImagenesLidar.append(bev_image) # Agregar la imagen a la lista de imágenes
+        if len(self.bufferImagenesLidar) >= 3: #El mayor es por si ocurre un error y superar los 3 frames en la variable
+            self.nubeDePuntosLidar = np.stack((self.bufferImagenesLidar[0], self.bufferImagenesLidar[1], self.bufferImagenesLidar[2]), axis=-1)
+            cv2.imshow('Frame stackeado', self.nubeDePuntosLidar)
+            cv2.waitKey(1)
+            self.bufferImagenesLidar = []
 
         #cv2.imwrite("imagenes/imagen_lidar.png", bev_image)
 
@@ -318,7 +325,7 @@ class CarlaEnv(gym.Env):
 
         self.bufferImagenes.append(gray_image) # Agregar la imagen a la lista de imágenes
         if len(self.bufferImagenes) >= 3: #El mayor es por si ocurre un error y superar los 3 frames en la variable
-            self.FrameActual = np.stack((self.bufferImagenes[0], self.bufferImagenes[1], self.bufferImagenes[2]), axis=-1)  # Apilar las últimas 3 imágenes
+            self.FrameActual = np.stack((self.bufferImagenes[0], self.bufferImagenes[1], self.bufferImagenes[2]), axis=-1)  # Apilar las últimas 3 imágenes, el axis -1 hace que la nueva dimensión se agregue al final (300, 300, 3)
             #cv2.imshow('Frame stackeado', self.FrameActual)
             #cv2.waitKey(1)
             self.bufferImagenes = []  # Limpiar el buffer de imágenes
