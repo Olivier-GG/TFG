@@ -48,6 +48,7 @@ class CarlaEnv(gym.Env):
         self.FrameActual = None
         self.temporizador = 0
         self.nubeDePuntosLidar = None
+        self.bufferImagenes = [] 
 
         self.cocheAutonomo = self.spawnearVehiculoAutonomo(self.world, self.blueprint_library)
         
@@ -55,8 +56,8 @@ class CarlaEnv(gym.Env):
 
         # Definir el espacio de observación (Elegir el que se vaya a utilizar)
         
-        self.observation_space = gym.spaces.Box(0, 255, (500,500), dtype=np.uint8)
-        #self.observation_space = spaces.Box(0,255,(300,300,3),np.uint8) # Imagen RGB de 300x300 que me devuelve el sensor semantico
+        #self.observation_space = gym.spaces.Box(0, 255, (500,500), dtype=np.uint8)
+        self.observation_space = spaces.Box(0,255,(300,300,3),np.uint8) # Imagen RGB de 300x300 que me devuelve el sensor semantico
 
 
     def reset(self, seed=None, options=None):
@@ -125,7 +126,7 @@ class CarlaEnv(gym.Env):
         #|||||||||||||||||||||||||||||||||||||||||
         # Saca la observacion del sensor semantico
 
-        """
+        
         while self.FrameActual is None:
             time.sleep(0.05)
             print("Esperando a que el lidar genere la nube de puntos")
@@ -134,9 +135,9 @@ class CarlaEnv(gym.Env):
         self.FrameActual = None
 
 
-        """
         #|||||||||||||||||||||||||||||||||||||||||||||
 
+        """
         # Saca la observacion del LIDAR 
         while self.nubeDePuntosLidar is None:
             time.sleep(0.05)
@@ -145,7 +146,7 @@ class CarlaEnv(gym.Env):
         obs = self.nubeDePuntosLidar #Usamos la nube de puntos del lidar como observacion
 
         self.nubeDePuntosLidar = None #Limpiamos la nube de puntos para que no se acumulen los datos
-
+        """
         #||||||||||||||||||||||||||||||||||||||||||||
 
         return obs, dic
@@ -308,14 +309,17 @@ class CarlaEnv(gym.Env):
 
         #Esto la convierte en formato 300 300, ya se podrían stackear 3
         gray_image = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
-        print(gray_image.shape)  # Debería ser (300, 300)
-        cv2.imshow('Grayscale Image', gray_image)
-        cv2.waitKey(1)
+        #print(gray_image.shape)  # Debería ser (300, 300)
+        #cv2.imshow('Grayscale Image', gray_image)
+        #cv2.waitKey(1)
 
-        self.FrameActual = img_array
 
-        
-        
+        #Deberia de stackearlo en este metodo
+
+        self.bufferImagenes.append(gray_image) # Agregar la imagen a la lista de imágenes
+        if len(self.bufferImagenes) == 3:
+            self.FrameActual = np.stack(self.bufferImagenes[-3:], axis=-1)  # Apilar las últimas 3 imágenes
+            self.bufferImagenes = []  # Limpiar el buffer de imágenes
 
         # Guardar la imagen en disco (opcional)
         #semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
