@@ -317,8 +317,10 @@ class CarlaEnv(gym.Env):
         #Deberia de stackearlo en este metodo
 
         self.bufferImagenes.append(gray_image) # Agregar la imagen a la lista de imágenes
-        if len(self.bufferImagenes) == 3:
-            self.FrameActual = np.stack(self.bufferImagenes[-3:], axis=-1)  # Apilar las últimas 3 imágenes
+        if len(self.bufferImagenes) >= 3: #El mayor es por si ocurre un error y superar los 3 frames en la variable
+            self.FrameActual = np.stack((self.bufferImagenes[0], self.bufferImagenes[1], self.bufferImagenes[2]), axis=-1)  # Apilar las últimas 3 imágenes
+            #cv2.imshow('Frame stackeado', self.FrameActual)
+            #cv2.waitKey(1)
             self.bufferImagenes = []  # Limpiar el buffer de imágenes
 
         # Guardar la imagen en disco (opcional)
