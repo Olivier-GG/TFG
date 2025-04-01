@@ -75,9 +75,9 @@ def main () :
 
             print("Evaluando agente...")
             
-            evaluate_agent(env, 'models/dqn_2000')
+            evaluate_agent(env, 'models/dqnV1_prueba') 
 
-            print("Evaluar agente completado")
+            print("✅Evaluar agente completado")
 
             
         elif eleccion == "t" or eleccion == "T":
@@ -88,7 +88,7 @@ def main () :
             train_agent(env)
 
             print("\n\n\n")
-            print("               Entrenamiento completado         \n")
+            print("               ✅Entrenamiento completado         \n")
 
         else:
             print("Opción no válida")

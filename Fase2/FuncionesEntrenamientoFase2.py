@@ -4,6 +4,7 @@ import json
 from stable_baselines3 import DQN
 import os
 import torch
+from tqdm import tqdm
 
 
 def train_agent(env):
@@ -15,14 +16,14 @@ def train_agent(env):
     os.makedirs(log_dir, exist_ok=True)
     
     #Seleccionamos el tipo de modelo que queremos(segun el tipo de sensor que usemos)
-    model = DQN('CnnPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=3000) 
-    
+    model = DQN('CnnPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=30000) 
+
     # Puedes ver los resulatdos que va dando el entrenamiento con el comando -> tensorboard --logdir logs
 
     TIMESTEPS = 300000 #Equivaldria a unos 3000 episodios de los anteirores
-
+    
     model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, log_interval=1, progress_bar=True) # train
-    model.save(f"{model_dir}/dqnV1_300000") # Save a trained model every TIMESTEPS
+    model.save(f"{model_dir}/dqnV1_prueba") # Save a trained model every TIMESTEPS
 
 
     print("Entrenamiento finalizado, puede proceder a evaluarlo")
@@ -32,16 +33,41 @@ def train_agent(env):
 # Evaluate the agent
 def evaluate_agent(env, directory):
 
-    # Load model
     model = DQN.load(directory, env=env)
 
-    # Run a test
-    obs = env.reset()[0]
+    rewards = []
+    timestep = 0
     terminated = False
-    while True:
-        action, _ = model.predict(observation=obs, deterministic=True) # Turn on deterministic, so predict always returns the same behavior
-        obs, _, terminated, _, _ = env.step(action)
 
-        if terminated:
-            break
+    total_timesteps = 2000  # Total de timesteps para la evaluación
+    
+    progress_bar = tqdm(total=total_timesteps, desc="Evaluando agente", unit="timestep")
+
+
+    obs, _ = env.reset()
+    
+
+    while timestep < total_timesteps:
         
+        action, _ = model.predict(observation=obs, deterministic=False)
+        obs, reward, terminated, _ , _ = env.step(action)
+        
+        rewards.append(reward)
+        timestep += 1
+        progress_bar.update(1)
+
+        
+        if terminated:
+            obs, _ = env.reset()
+            terminated = False
+           
+
+    progress_bar.close()
+
+    mean_reward = np.mean(rewards)
+    var_reward = np.var(rewards)
+    print(f"\n\n🔹 Timesteps: {timestep} | Recompensa Promedia: {mean_reward:.4f} | Varianza: {var_reward:.4f}")
+    
+    print("\n✅ Evaluación completa.")
+
+    
