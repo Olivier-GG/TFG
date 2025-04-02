@@ -38,7 +38,3 @@ Pruebo entrenarlo con los siguientes parametros, estoy en el commit Se añaden m
 
 
 
-  falta stackear 3 frames y que funcione tensor
-
-  comprobar funcion de evaluacion
-

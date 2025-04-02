@@ -3,6 +3,7 @@ numpy
 carla
 tqdm
 stable-baselines3
+stable-baselines3[extra]
 torch
 torchvision
 tensorboard

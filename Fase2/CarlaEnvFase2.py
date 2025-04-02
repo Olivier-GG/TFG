@@ -43,7 +43,6 @@ class CarlaEnv(gym.Env):
         self.sensorColisionOld = None
         self.sensorColisionb = self.blueprint_library.find('sensor.other.collision')
         self.posicionInicial = None
-        self.ultimaPosicion = None
         self.VelocidadVehiculo = 0
         self.frameStackeado = None
         self.temporizador = 0
@@ -94,7 +93,7 @@ class CarlaEnv(gym.Env):
         else:
             self.cocheAutonomo.apply_control(carla.VehicleControl(brake=1.0, throttle=0.0, steer=0.0)) #Frenar
 
-        time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
+        #time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
 
         # Obtener la observación actual (por ejemplo, imagen de la cámara)
         obs, info = self.get_observation()
@@ -127,8 +126,7 @@ class CarlaEnv(gym.Env):
         # Saca la observacion del sensor semantico
 
         while self.frameStackeado is None:
-            time.sleep(0.05)
-            print("Esperando a que el lidar genere la nube de puntos")
+            time.sleep(0.02) #con este tiempo de espera es con el que se obtienen mas timesteps por segundo
 
         obs = self.frameStackeado
         self.frameStackeado = None
@@ -137,9 +135,8 @@ class CarlaEnv(gym.Env):
 
 
     def calcularRecompensa(self):
-
-        acu = self.cocheAutonomo.get_location().distance(self.ultimaPosicion)
-        acu += self.VelocidadVehiculo * 3.6 #Le damos los puntos en base a km/h y no m/s
+        
+        acu = self.VelocidadVehiculo * 3.6 #Le damos los puntos en base a km/h y no m/s
 
         for elemento in self.cache:
             if elemento == 2: # Linea exterior
@@ -151,11 +148,11 @@ class CarlaEnv(gym.Env):
             elif elemento == 0: # Colision
                 acu -= 40
 
-        self.ultimaPosicion = self.cocheAutonomo.get_location()
+
         return acu
 
     def terminated(self):
-        if 0 in self.cache or time.time() - self.temporizador > 90: #El episodio termina si el coche choca o si pasa 90 segundos
+        if 0 in self.cache or time.time() - self.temporizador > 10: #El episodio termina si el coche choca o si pasa 90 segundos
             return True
         else:
             return False
@@ -291,16 +288,8 @@ class CarlaEnv(gym.Env):
         #Elimino la amplitud ya que no sirve de nada
         img_array = img_array[:, :, :3] #RGB
 
-        #para stackear frames frame_unido = np.stack((frame1, frame2, frame3), axis=-1)  # Agrega como canales
-
-        # Transponer la imagen para que tenga la forma (N_CHANNELS, HEIGHT, WIDTH)
-        #img_array = np.transpose(img_array, (2, 0, 1))
-
         #Esto la convierte en formato 300 300, ya se podrían stackear 3
         gray_image = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
-        #print(gray_image.shape)  # Debería ser (300, 300)
-        #cv2.imshow('Grayscale Image', gray_image)
-        #cv2.waitKey(1)
 
 
         #Deberia de stackearlo en este metodo
@@ -308,13 +297,10 @@ class CarlaEnv(gym.Env):
         self.bufferImagenes.append(gray_image) # Agregar la imagen a la lista de imágenes
         if len(self.bufferImagenes) >= 3: #El mayor es por si ocurre un error y superar los 3 frames en la variable
             self.frameStackeado = np.stack((self.bufferImagenes[0], self.bufferImagenes[1], self.bufferImagenes[2]), axis=-1)  # Apilar las últimas 3 imágenes, el axis -1 hace que la nueva dimensión se agregue al final (300, 300, 3)
-            cv2.imshow('Frame stackeado', self.frameStackeado)
-            cv2.waitKey(1)
+            #cv2.imshow('Frame stackeado', self.frameStackeado)
+            #cv2.waitKey(1)
             self.bufferImagenes = []  # Limpiar el buffer de imágenes
 
-        # Guardar la imagen en disco (opcional)
-        #semantico.save_to_disk("imagenes/" + str(time.time()) + ".png", carla.ColorConverter.CityScapesPalette)
-        #cv2.imwrite("imagenes/imagen_guardada.png", img_array)
 
 
     #|||||||||||||||||||||||||||||||||||||||||||||||||||||||
@@ -346,7 +332,6 @@ class CarlaEnv(gym.Env):
             puntoDeSpawn = random.choice(self.puntosSpawn)
             self.cocheAutonomo.set_transform(puntoDeSpawn) # Movemos el coche a una posicion aleatoria
             self.posicionInicial = puntoDeSpawn.location
-            self.ultimaPosicion = puntoDeSpawn.location #Para que no de problemas al calcular la recompensa
             time.sleep(1)
 
             #setear sensor de colision

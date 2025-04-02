@@ -5,13 +5,13 @@ from stable_baselines3 import DQN
 import os
 import torch
 from tqdm import tqdm
-
+from stable_baselines3.common.logger import configure
 
 def train_agent(env):
 
     #Creamos los directorios para almacenar la informacion
     model_dir = "models"
-    log_dir = "logs"
+    log_dir = "logsTensorboard"
     os.makedirs(model_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
     
@@ -20,12 +20,16 @@ def train_agent(env):
 
     # Puedes ver los resulatdos que va dando el entrenamiento con el comando -> tensorboard --logdir logs
 
-    TIMESTEPS = 300000 #Equivaldria a unos 3000 episodios de los anteirores
+    TIMESTEPS = 50000 #Equivaldria a unos 3000 episodios de los anteirores
+    iteraciones = 0
+
+    while iteraciones < 20:
+        iteraciones += 1
+
+        model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, log_interval=1, progress_bar=True)
+        model.save(f"{model_dir}/dqn_Semantic_{TIMESTEPS * (iteraciones)}_noDelay") 
+        
     
-    model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, log_interval=1, progress_bar=True) # train
-    model.save(f"{model_dir}/dqnV1_prueba") # Save a trained model every TIMESTEPS
-
-
     print("Entrenamiento finalizado, puede proceder a evaluarlo")
 
 
