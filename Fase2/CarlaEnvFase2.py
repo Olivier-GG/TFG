@@ -152,7 +152,7 @@ class CarlaEnv(gym.Env):
         return acu
 
     def terminated(self):
-        if 0 in self.cache or time.time() - self.temporizador > 10: #El episodio termina si el coche choca o si pasa 90 segundos
+        if 0 in self.cache or time.time() - self.temporizador > 90: #El episodio termina si el coche choca o si pasa 90 segundos
             return True
         else:
             return False
