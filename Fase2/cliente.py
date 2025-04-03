@@ -75,7 +75,7 @@ def main () :
 
             print("Evaluando agente...")
             
-            evaluate_agent(env, 'models/dqnV1_prueba') 
+            evaluate_agent(env, 'models/dqn_Semantic_425000_noDelay') 
 
             print("✅Evaluar agente completado")
 

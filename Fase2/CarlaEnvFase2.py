@@ -124,6 +124,9 @@ class CarlaEnv(gym.Env):
 
     def calcularRecompensa(self):
         
+        velocidad = self.cocheAutonomo.get_velocity()
+        self.VelocidadVehiculo = math.sqrt(velocidad.x**2 + velocidad.y**2)
+
         acu = self.VelocidadVehiculo * 10 #Le damos los puntos en base a km/h y no m/s
 
         for elemento in self.cache:
