@@ -51,7 +51,7 @@ class CarlaEnv(gym.Env):
 
         self.cocheAutonomo = self.spawnearVehiculoAutonomo(self.world, self.blueprint_library)
         
-        self.action_space = spaces.Discrete(10)  # Puede ser aceleración, frenado, dirección, etc.
+        self.action_space = spaces.Discrete(4)  # Puede ser aceleración, frenado, dirección, etc.
 
         # Definir el espacio de observación (Elegir el que se vaya a utilizar)
         
@@ -75,21 +75,9 @@ class CarlaEnv(gym.Env):
         if action == 0:
             self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=1.0, steer=0.0)) #Acelerar
         elif action == 1:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.5, steer=0.0)) #Acelerar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=1.0)) #Girar 
         elif action == 2:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=0.75)) #Girar 
-        elif action == 3:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=0.5)) #Girar 
-        elif action == 4:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=0.25)) #Girar 
-        elif action == 5:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=-0.25)) #Girar 
-        elif action == 6:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=-0.5)) #Girar 
-        elif action == 7:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=-0.75)) #Girar 
-        elif action == 8:
-            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.5, throttle=0.0, steer=0.0)) #Frenar 
+            self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=0.0, steer=-1.0)) #Girar 
         else:
             self.cocheAutonomo.apply_control(carla.VehicleControl(brake=1.0, throttle=0.0, steer=0.0)) #Frenar
 

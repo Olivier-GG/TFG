@@ -11,12 +11,12 @@ def train_agent(env):
 
     #Creamos los directorios para almacenar la informacion
     model_dir = "models"
-    log_dir = "logsTensorboard"
+    log_dir = "logsTensorboardV2"
     os.makedirs(model_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
     
     #Seleccionamos el tipo de modelo que queremos(segun el tipo de sensor que usemos)
-    model = DQN('CnnPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=20000, exploration_fraction=4) 
+    model = DQN('CnnPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=5000, exploration_fraction=0.25, gamma=0.4) 
 
     # Puedes ver los resulatdos que va dando el entrenamiento con el comando -> tensorboard --logdir logs
 
@@ -27,7 +27,7 @@ def train_agent(env):
         iteraciones += 1
 
         model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, log_interval=1, progress_bar=True)
-        model.save(f"{model_dir}/dqn_Semantic_{TIMESTEPS * (iteraciones)}_noDelay") 
+        model.save(f"{model_dir}/dqn_Semantic_{TIMESTEPS * (iteraciones)}_noDelay_V2") 
         
     
     print("Entrenamiento finalizado, puede proceder a evaluarlo")
