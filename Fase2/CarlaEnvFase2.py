@@ -81,7 +81,7 @@ class CarlaEnv(gym.Env):
         else:
             self.cocheAutonomo.apply_control(carla.VehicleControl(brake=1.0, throttle=0.0, steer=0.0)) #Frenar
 
-        #time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
+        time.sleep(0.15) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
 
         # Obtener la observación actual (por ejemplo, imagen de la cámara)
         obs, info = self.get_observation()
@@ -124,7 +124,7 @@ class CarlaEnv(gym.Env):
 
     def calcularRecompensa(self):
         
-        acu = self.VelocidadVehiculo * 3.6 #Le damos los puntos en base a km/h y no m/s
+        acu = self.VelocidadVehiculo * 10 #Le damos los puntos en base a km/h y no m/s
 
         for elemento in self.cache:
             if elemento == 2: # Linea exterior
