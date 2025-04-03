@@ -127,14 +127,16 @@ class CarlaEnv(gym.Env):
         acu = self.VelocidadVehiculo * 10 #Le damos los puntos en base a km/h y no m/s
 
         for elemento in self.cache:
-            if elemento == 2: # Linea exterior
-                acu -= 5
-            elif elemento == 3: # Linea interior
-                acu -= 5
-            elif elemento == 4: # Linea discontinua
-                acu -= 1
-            elif elemento == 0: # Colision
-                acu -= 40
+            if  self.VelocidadVehiculo != 0: # Si el coche no se mueve no se le da recompensa
+            
+                if elemento == 2: # Linea exterior
+                    acu -= 5
+                elif elemento == 3: # Linea interior
+                    acu -= 5
+                elif elemento == 4: # Linea discontinua
+                    acu -= 1
+                elif elemento == 0: # Colision
+                    acu -= 25
 
 
         return acu
