@@ -53,7 +53,7 @@ def evaluate_agent(env, directory):
 
     while timestep < total_timesteps:
         
-        action, _ = model.predict(observation=obs, deterministic=False)
+        action, _ = model.predict(observation=obs, deterministic=True)
         obs, reward, terminated, _ , _ = env.step(action)
         
         rewards.append(reward)

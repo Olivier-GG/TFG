@@ -38,3 +38,4 @@ Pruebo entrenarlo con los siguientes parametros, estoy en el commit Se añaden m
 
 
 
+en los modelos el 125 se mueve todo el rato y el 150 se queda quieto a veces
