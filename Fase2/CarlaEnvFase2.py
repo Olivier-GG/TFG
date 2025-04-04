@@ -127,19 +127,27 @@ class CarlaEnv(gym.Env):
         velocidad = self.cocheAutonomo.get_velocity()
         self.VelocidadVehiculo = math.sqrt(velocidad.x**2 + velocidad.y**2)
 
-        acu = self.VelocidadVehiculo * 10 #Le damos los puntos en base a km/h y no m/s
+        acu = self.VelocidadVehiculo * 3.6 #Le damos los puntos en base a km/h y no m/s
+
+        #Le damos recompensa extra por aguantar un tiempo sin chocar
+        tiempoPasado = time.time() - self.temporizador 
+        if tiempoPasado > 45: 
+            acu += 3
+        elif tiempoPasado > 75: 
+            acu += 4
+
 
         for elemento in self.cache:
             if  self.VelocidadVehiculo != 0: # Si el coche no se mueve no se le da recompensa
             
                 if elemento == 2: # Linea exterior
-                    acu -= 4
+                    acu -= 10
                 elif elemento == 3: # Linea interior
-                    acu -= 3
+                    acu -= 10
                 elif elemento == 4: # Linea discontinua
-                    acu -= 1
+                    acu -= 2
                 elif elemento == 0: # Colision
-                    acu -= 30
+                    acu -= 50
 
 
         return acu
