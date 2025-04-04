@@ -133,13 +133,13 @@ class CarlaEnv(gym.Env):
             if  self.VelocidadVehiculo != 0: # Si el coche no se mueve no se le da recompensa
             
                 if elemento == 2: # Linea exterior
-                    acu -= 5
+                    acu -= 4
                 elif elemento == 3: # Linea interior
-                    acu -= 5
+                    acu -= 3
                 elif elemento == 4: # Linea discontinua
                     acu -= 1
                 elif elemento == 0: # Colision
-                    acu -= 25
+                    acu -= 30
 
 
         return acu
