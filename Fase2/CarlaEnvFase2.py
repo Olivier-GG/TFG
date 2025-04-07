@@ -9,6 +9,7 @@ import time
 import cv2
 import random
 import math
+import matplotlib.cm as cm
 from PIL import Image
 from gymnasium.envs.registration import register
 
@@ -48,6 +49,7 @@ class CarlaEnv(gym.Env):
         self.temporizador = 0
         self.nubeDePuntosLidar = None
         self.bufferImagenes = [] 
+        self.auxiliar = 0
 
         self.cocheAutonomo = self.spawnearVehiculoAutonomo(self.world, self.blueprint_library)
         
@@ -225,14 +227,15 @@ class CarlaEnv(gym.Env):
         cv2.imshow("", img2)
         cv2.waitKey(100) # Espera 100ms para que se vea la imagen
 
+    """
     def manejarSensorLidar(self, lidar):
        
-        """
-        data = np.frombuffer(lidar.raw_data, dtype=np.float32)  # Convertir a numpy
-        data = np.reshape(data, (-1, 4))  # Cada punto tiene (X, Y, Z, Intensidad)
-        print(f"LiDAR recibió {data.shape[0]} puntos")
-        print(data)  # Imprimir los primeros 5 puntos para ver el formato
-        """
+        
+        #data = np.frombuffer(lidar.raw_data, dtype=np.float32)  # Convertir a numpy
+        #data = np.reshape(data, (-1, 4))  # Cada punto tiene (X, Y, Z, Intensidad)
+        #print(f"LiDAR recibió {data.shape[0]} puntos")
+        #print(data)  # Imprimir los primeros 5 puntos para ver el formato
+        
 
         lidar_points = np.frombuffer(lidar.raw_data, dtype=np.float32)  # Convertir a numpy
         lidar_points = np.reshape(lidar_points, (-1, 4))  # Cada punto tiene (X, Y, Z, Intensidad)
@@ -275,6 +278,30 @@ class CarlaEnv(gym.Env):
             self.bufferImagenes = []
 
         #cv2.imwrite("imagenes/imagen_lidar.png", bev_image)
+
+    """
+
+
+    def manejarSensorLidar(self, lidar):
+        # Convertir los datos de Lidar a un array numpy
+        lidar_points = np.frombuffer(lidar.raw_data, dtype=np.float32)
+        lidar_points = np.reshape(lidar_points, (-1, 4))  # Cada punto tiene (X, Y, Z, Intensidad)
+
+        num_points = lidar_points.shape[0]
+        target_n = 1000
+
+        if num_points >= target_n:
+            # Selección aleatoria si hay más puntos que los deseados
+            indices = np.random.choice(num_points, target_n, replace=False)
+            resultado = lidar_points[indices]
+        else:
+            # Rellenar con ceros si hay menos puntos
+            pad_size = target_n - num_points
+            padding = np.zeros((pad_size, lidar_points.shape[1]), dtype=lidar_points.dtype)
+            resultado = np.vstack((lidar_points, padding))
+
+        #faltaria stackearlo de 3 en 3 para que el modelo pueda aprender de la secuencia de frames
+
 
 
 
@@ -449,7 +476,7 @@ class CarlaEnv(gym.Env):
         sensorObstaculos.listen(lambda obstaculo: self.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
         
         #!!!!!!!!!!! SOLO TENER 1 ACTIVO A LA VEZ !!!!!!!!!!!
-        #sensorLidar.listen(lambda lidar: self.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
+        sensorLidar.listen(lambda lidar: self.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
         sensorSemantico.listen(lambda semantico: self.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
