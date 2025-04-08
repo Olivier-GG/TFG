@@ -49,6 +49,7 @@ class CarlaEnv(gym.Env):
         self.temporizador = 0
         self.nubeDePuntosLidar = None
         self.bufferImagenes = [] 
+        self.bufferNubesDePuntos = []
         self.auxiliar = 0
 
         self.cocheAutonomo = self.spawnearVehiculoAutonomo(self.world, self.blueprint_library)
@@ -57,8 +58,8 @@ class CarlaEnv(gym.Env):
 
         # Definir el espacio de observación (Elegir el que se vaya a utilizar)
         
-        #self.observation_space = gym.spaces.Box(0, 255, (200,200,3), dtype=np.uint8) # Imagen stackeada que nos devuelve el lidar
-        self.observation_space = spaces.Box(0,255,(300,300,3),np.uint8) # Imagen RGB de 300x300 que me devuelve el sensor semantico
+        self.observation_space = gym.spaces.Box(-10, 10, (1000,4,3), dtype=np.float32) # Imagen stackeada que nos devuelve el lidar
+        #self.observation_space = spaces.Box(0,255,(300,300,3),np.uint8) # Imagen RGB de 300x300 que me devuelve el sensor semantico
         #Se han puesto 2 osberservaciones con resoluciones (solo puede haber una activa a la vez) diferentes para que salte un error en caso de dejar ambos sensores activos a la vez
 
     def reset(self, seed=None, options=None):
@@ -301,7 +302,10 @@ class CarlaEnv(gym.Env):
             resultado = np.vstack((lidar_points, padding))
 
         #faltaria stackearlo de 3 en 3 para que el modelo pueda aprender de la secuencia de frames
-
+        self.bufferNubesDePuntos.append(resultado) 
+        if len(self.bufferNubesDePuntos) >= 3: 
+            self.frameStackeado = np.stack((self.bufferNubesDePuntos[0], self.bufferNubesDePuntos[1], self.bufferNubesDePuntos[2]), axis=-1)  # Apilar las últimas 3 imágenes, el axis -1 hace que la nueva dimensión se agregue al final (300, 300, 3)
+            self.bufferNubesDePuntos = []
 
 
 
@@ -477,7 +481,7 @@ class CarlaEnv(gym.Env):
         
         #!!!!!!!!!!! SOLO TENER 1 ACTIVO A LA VEZ !!!!!!!!!!!
         sensorLidar.listen(lambda lidar: self.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-        sensorSemantico.listen(lambda semantico: self.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
+        #sensorSemantico.listen(lambda semantico: self.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona

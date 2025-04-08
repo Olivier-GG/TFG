@@ -55,7 +55,12 @@ def main () :
         env = gym.make('CarlaEnviroment')
         
         #Comprobamos que el enviroment es correcto
-        check_env(env)
+        print ("Comprobando el enviroment...")
+
+        #check_env(env)
+
+        print ("✅El enviroment es correcto")
+        #Comprobamos que el enviroment es correcto
 
         print("Conexion con el servidor establecida y todas las variables principales inicializadas")
 

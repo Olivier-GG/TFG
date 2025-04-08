@@ -10,13 +10,14 @@ from stable_baselines3.common.logger import configure
 def train_agent(env):
 
     #Creamos los directorios para almacenar la informacion
-    model_dir = "modelsV4"
-    log_dir = "logsTensorboardV4"
+    model_dir = "modelsV5Lidar"
+    log_dir = "logsTensorboardV5Lidar"
     os.makedirs(model_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
     
     #Seleccionamos el tipo de modelo que queremos(segun el tipo de sensor que usemos)
-    model = DQN('CnnPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=30000, exploration_fraction=0.80, gamma=0.7) 
+    #model = DQN('CnnPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=30000, exploration_fraction=0.80, gamma=0.7)  #Para usar el Sensor Semantico
+    model = DQN('MlpPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=30000, exploration_fraction=0.80, gamma=0.7) # Para el Lidar
 
     # Puedes ver los resulatdos que va dando el entrenamiento con el comando -> tensorboard --logdir logs
 
@@ -27,7 +28,7 @@ def train_agent(env):
         iteraciones += 1
 
         model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, log_interval=1, progress_bar=True)
-        model.save(f"{model_dir}/dqn_Semantic_{TIMESTEPS * (iteraciones)}_noDelay_V4") 
+        model.save(f"{model_dir}/dqn_Lidar_{TIMESTEPS * (iteraciones)}_V5") 
         
     
     print("Entrenamiento finalizado, puede proceder a evaluarlo")
