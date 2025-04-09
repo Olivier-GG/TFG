@@ -57,20 +57,21 @@ class CarlaEnv(gym.Env):
         self.action_space = spaces.Discrete(4)  # Puede ser aceleración, frenado, dirección, etc.
 
         # Definir el espacio de observación (Elegir el que se vaya a utilizar)
-        
+        #Se han puesto 2 osberservaciones con resoluciones (solo puede haber una activa a la vez) diferentes para que salte un error en caso de dejar ambos sensores activos a la vez
+
         self.observation_space = gym.spaces.Box(-10, 10, (1000,4,3), dtype=np.float32) # Imagen stackeada que nos devuelve el lidar
         #self.observation_space = spaces.Box(0,255,(300,300,3),np.uint8) # Imagen RGB de 300x300 que me devuelve el sensor semantico
-        #Se han puesto 2 osberservaciones con resoluciones (solo puede haber una activa a la vez) diferentes para que salte un error en caso de dejar ambos sensores activos a la vez
+        
 
     def reset(self, seed=None, options=None):
         
         super().reset(seed=seed)
 
-        self.temporizador = time.time() #iniciamos el temporizador 
+        self.temporizador = time.time() 
         self.moverCochePosicionIncial()
-        self.cache = [] #Limpiamos la cache por si acaso
+        self.cache = [] 
         obs, info = self.get_observation()
-        return obs, info #Devuelve informacion al final de cada episodio
+        return obs, info 
 
     def step(self, action):
 
@@ -112,9 +113,6 @@ class CarlaEnv(gym.Env):
     def get_observation(self):
 
         dic = {"info": "información"}
-
-        #|||||||||||||||||||||||||||||||||||||||||
-        # Saca la observacion del sensor semantico
 
         while self.frameStackeado is None:
             time.sleep(0.02) #con este tiempo de espera es con el que se obtienen mas timesteps por segundo
@@ -229,6 +227,7 @@ class CarlaEnv(gym.Env):
         cv2.waitKey(100) # Espera 100ms para que se vea la imagen
 
     """
+    #Este metodo te genera una imagen con los puntos del lidar
     def manejarSensorLidar(self, lidar):
        
         
@@ -323,9 +322,7 @@ class CarlaEnv(gym.Env):
         #Esto la convierte en formato 300 300, ya se podrían stackear 3
         gray_image = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
 
-
-        #Deberia de stackearlo en este metodo
-
+        #Procedemos a stackear las imagenes
         self.bufferImagenes.append(gray_image) # Agregar la imagen a la lista de imágenes
         if len(self.bufferImagenes) >= 3: #El mayor es por si ocurre un error y superar los 3 frames en la variable
             self.frameStackeado = np.stack((self.bufferImagenes[0], self.bufferImagenes[1], self.bufferImagenes[2]), axis=-1)  # Apilar las últimas 3 imágenes, el axis -1 hace que la nueva dimensión se agregue al final (300, 300, 3)
