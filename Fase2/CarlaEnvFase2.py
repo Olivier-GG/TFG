@@ -283,7 +283,7 @@ class CarlaEnv(gym.Env):
 
 
     def manejarSensorLidar(self, lidar):
-        # Convertir los datos de Lidar a un array numpy
+        
         lidar_points = np.frombuffer(lidar.raw_data, dtype=np.float32)
         lidar_points = np.reshape(lidar_points, (-1, 4))  # Cada punto tiene (X, Y, Z, Intensidad)
 
