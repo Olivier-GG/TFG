@@ -57,7 +57,7 @@ def main () :
         #Comprobamos que el enviroment es correcto
         print ("Comprobando el enviroment...")
 
-        #check_env(env)
+        check_env(env)
 
         print ("✅El enviroment es correcto")
         #Comprobamos que el enviroment es correcto

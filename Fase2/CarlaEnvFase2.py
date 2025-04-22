@@ -43,14 +43,11 @@ class CarlaEnv(gym.Env):
         self.sensorColision = None
         self.sensorColisionOld = None
         self.sensorColisionb = self.blueprint_library.find('sensor.other.collision')
-        self.posicionInicial = None
         self.VelocidadVehiculo = 0
         self.frameStackeado = None
         self.temporizador = 0
-        self.nubeDePuntosLidar = None
         self.bufferImagenes = [] 
         self.bufferNubesDePuntos = []
-        self.auxiliar = 0
 
         self.cocheAutonomo = self.spawnearVehiculoAutonomo(self.world, self.blueprint_library)
         
@@ -360,7 +357,6 @@ class CarlaEnv(gym.Env):
             time.sleep(0.5)
             puntoDeSpawn = random.choice(self.puntosSpawn)
             self.cocheAutonomo.set_transform(puntoDeSpawn) # Movemos el coche a una posicion aleatoria
-            self.posicionInicial = puntoDeSpawn.location
             time.sleep(1)
 
             #setear sensor de colision
