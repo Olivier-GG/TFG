@@ -109,7 +109,7 @@ class CarlaEnv(gym.Env):
 
     def get_observation(self):
 
-        dic = {"info": "información"}
+        dic = {"info": "No se aporta ninguna informacion"}
 
         while self.frameStackeado is None:
             time.sleep(0.02) #con este tiempo de espera es con el que se obtienen mas timesteps por segundo
