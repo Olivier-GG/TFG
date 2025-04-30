@@ -16,7 +16,7 @@ def train_agent(env):
     os.makedirs(log_dir, exist_ok=True)
     
     #Seleccionamos el tipo de modelo que queremos(segun el tipo de sensor que usemos)
-    model = DQN('CnnPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=30000, exploration_fraction=0.80, gamma=0.7, learning_starts=1000)  #Para usar el Sensor Semantico
+    model = DQN('CnnPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=50000, exploration_fraction=0.80, gamma=0.7, learning_starts=1000)  #Para usar el Sensor Semantico
     #model = DQN('MlpPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=30000, exploration_fraction=0.80, gamma=0.7, learning_starts=1000) # Para el Lidar
 
     # Puedes ver los resulatdos que va dando el entrenamiento con el comando -> tensorboard --logdir logs
