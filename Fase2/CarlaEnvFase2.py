@@ -56,8 +56,8 @@ class CarlaEnv(gym.Env):
         # Definir el espacio de observación (Elegir el que se vaya a utilizar)
         #Se han puesto 2 osberservaciones con resoluciones (solo puede haber una activa a la vez) diferentes para que salte un error en caso de dejar ambos sensores activos a la vez
 
-        #self.observation_space = gym.spaces.Box(-10, 10, (1000,4,3), dtype=np.float32) # Imagen stackeada que nos devuelve el lidar
-        self.observation_space = spaces.Box(0,255,(300,300,3),np.uint8) # Imagen RGB de 300x300 que me devuelve el sensor semantico
+        self.observation_space = gym.spaces.Box(-10, 10, (1000,4,3), dtype=np.float32) # Imagen stackeada que nos devuelve el lidar
+        #self.observation_space = spaces.Box(0,255,(300,300,3),np.uint8) # Imagen RGB de 300x300 que me devuelve el sensor semantico
         
 
     def reset(self, seed=None, options=None):
@@ -473,8 +473,8 @@ class CarlaEnv(gym.Env):
         sensorObstaculos.listen(lambda obstaculo: self.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
         
         #!!!!!!!!!!! SOLO TENER 1 ACTIVO A LA VEZ !!!!!!!!!!!
-        #sensorLidar.listen(lambda lidar: self.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-        sensorSemantico.listen(lambda semantico: self.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
+        sensorLidar.listen(lambda lidar: self.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
+        #sensorSemantico.listen(lambda semantico: self.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
         #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
