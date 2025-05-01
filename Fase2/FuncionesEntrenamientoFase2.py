@@ -10,8 +10,8 @@ from stable_baselines3.common.logger import configure
 def train_agent(env):
 
     #Creamos los directorios para almacenar la informacion
-    model_dir = "modelsV6Semantico"
-    log_dir = "logsTensorboardV6Semantico"
+    model_dir = "modelsV7Lidar"
+    log_dir = "logsTensorboardV7Lidar"
     os.makedirs(model_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
     
@@ -28,7 +28,7 @@ def train_agent(env):
         iteraciones += 1
 
         model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, log_interval=1, progress_bar=True)
-        model.save(f"{model_dir}/dqn_semantico_{TIMESTEPS * (iteraciones)}_V6") 
+        model.save(f"{model_dir}/dqn_lidar_{TIMESTEPS * (iteraciones)}_V7") 
         
     
     print("Entrenamiento finalizado, puede proceder a evaluarlo")
