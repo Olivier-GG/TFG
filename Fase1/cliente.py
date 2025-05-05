@@ -2,7 +2,7 @@ import glob
 import os
 import sys
 import random
-from spawn_npc import spawnearCoches
+from ScriptsAuxiliares.spawn_npc import spawnearCoches
 import numpy as np
 import glob
 import os
