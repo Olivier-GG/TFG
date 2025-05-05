@@ -12,3 +12,4 @@ modelsV7Lidar
 /Fase1/__pycache__
 /entorno3.9
 __pycache__
+*.txt
