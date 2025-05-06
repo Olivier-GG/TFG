@@ -37,19 +37,18 @@ class CarlaEnv(gym.Env):
         self.ultimaPosicion = None
         self.VelocidadVehiculo = 0
         
-        self.action_space = spaces.Discrete(10)  # Puede ser aceleración, frenado, dirección, etc.
-        self.observation_space = spaces.Discrete(20) # Todas las combinaciones de los  (linea y obstaculos), porque el de colisión es para acabar el episodio
+        self.action_space = spaces.Discrete(10)  # Espacio de acción discreto (acelerar, frenar, etc.)
+        self.observation_space = spaces.Discrete(20) # Espacio de observación discreto (todo correcto, obstaculo, linea continua interior, etc.)
 
 
     def reset(self):
         
         self.moverCochePosicionIncial()
-        self.cache = [] #Limpiamos la cache por si acaso
-        return self.get_observation() #Devuelve informacion al final de cada episodio
+        self.cache = [] #Limpiamos la cache
+        return self.get_observation()
 
     def step(self, action):
 
-        # Convertir la acción en un comando para el coche (ejemplo, movimiento)
         if action == 0:
             self.cocheAutonomo.apply_control(carla.VehicleControl(brake=0.0, throttle=1.0, steer=0.0)) #Acelerar
         elif action == 1:
@@ -71,38 +70,25 @@ class CarlaEnv(gym.Env):
         else:
             self.cocheAutonomo.apply_control(carla.VehicleControl(brake=1.0, throttle=0.0, steer=0.0)) #Frenar
 
-        time.sleep(0.2) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
+        time.sleep(0.2) #Tiempo entre que se toma la accion y se obtiene la observacion
 
-        # Obtener la observación actual (por ejemplo, imagen de la cámara)
         info, state = self.get_observation()
 
-        # Calcular la recompensa (esto depende de tu objetivo específico)
         if state == 16: #Si es este estado no puede haber recompensa negativa por chocar, es un error a la hora de respawnear
             reward = 0
         else:
-            reward = self.calcularRecompensa()  # Aquí va la lógica de recompensa
+            reward = self.calcularRecompensa() 
         
-        # Verificar si el episodio ha terminado (por ejemplo, si el coche ha chocado)
-        done = self.terminated()  # Lógica para determinar cuándo se acaba el episodio
-        
-        
-        """"
-        # Devolver la información necesaria para el aprendizaje
-        
-        print("")
-        print("Estado: " + info)
-        print("Recompensa: " + str(reward))
-        print(self.cache) # Para ir viendo como va el entorno
-        """
+        done = self.terminated()  ## Comprobar si el episodio ha terminado
 
-        self.cache = [] #Vaciamos la cache para que no se acumulen los datos
+        self.cache = [] #Limpiamos la cache
         
-
         return info, state, reward, done
+
 
     def get_observation(self):
 
-        self.VelocidadVehiculo = math.sqrt(self.cocheAutonomo.get_velocity().x**2 + self.cocheAutonomo.get_velocity().y**2) # Esta en m/s
+        self.VelocidadVehiculo = math.sqrt(self.cocheAutonomo.get_velocity().x**2 + self.cocheAutonomo.get_velocity().y**2) # Obtenemos la velocidad del coche autonomo en m/s
         
         if 1 in self.cache:
 
@@ -178,12 +164,20 @@ class CarlaEnv(gym.Env):
         self.ultimaPosicion = self.cocheAutonomo.get_location()
         return acu
 
+    def terminated(self):
+        #Si se ha detectado una colision devolvemos True
+        if 0 in self.cache:
+            return True
+        else:
+            return False
+        
+
     def render(self, mode='human'):
-        # Renderizar el entorno para visualizarlo (si es necesario)
         pass
 
+
     def close(self):
-        # Limpiar y cerrar los recursos al finalizar
+        #Destruimos los sensores que hemos creado antes de cerrar el entorno
         self.sensorColision.stop()
         self.sensorColision.destroy()
         if self.sensorColisionOld.is_alive:
@@ -191,15 +185,10 @@ class CarlaEnv(gym.Env):
             self.sensorColisionOld.destroy()
         print("Cerrando entorno")
 
-    def terminated(self):
-        if 0 in self.cache:
-            return True
-        else:
-            return False
 
-    
-    #||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-    #Funciones para manejar los sensores del coche autonomo
+    #||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+    #|||||||| Funciones para manejar los sensores del coche autonomo ||||||||||
+    #||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
     def manejarSensorLinea(self, invasion):
         if 2 not in self.cache and 3 not in self.cache and 4 not in self.cache:
@@ -215,8 +204,7 @@ class CarlaEnv(gym.Env):
             else:
                 self.cache.append(4) # Para lineas discontinuas
                 print("Linea discontinua detectada")
-            
-            #print("Invasion de linea detectada de tipo: " + str(invasion.crossed_lane_markings[0].type))
+
 
     def manejadorColisiones(self, colision):
         if self.sensorColision is not None:
@@ -224,10 +212,12 @@ class CarlaEnv(gym.Env):
             self.sensorColision.stop()
             print("Colision detectada")
 
+
     def manejarSensorObstaculos(self, obstaculo):
         if 1 not in self.cache:
             print("Obstaculo detectado")
             self.cache.append(1)    
+
 
     def manejarSensorCamara(self, world, vehicle):
             spectator = world.get_spectator()
@@ -235,8 +225,9 @@ class CarlaEnv(gym.Env):
             spectator.set_transform(carla.Transform(transform.location + carla.Location(z=50),
             carla.Rotation(pitch=-90)))
         
-    #Va un poco lagado entonces no lo utilizo, dejas para hacer video futuro
-    def procesarImagen(self, imagen): #Para que se vea como circula el coche
+
+    #No se utiliza, pero se deja por si se quiere ver en 3 persona como circula el vehiculo
+    def procesarImagen(self, imagen):
         imagen = np.array(imagen.raw_data)
         img = imagen.reshape((600,800,4))
         img2 = img[:,:,:3]
@@ -246,9 +237,9 @@ class CarlaEnv(gym.Env):
 
 
 
-    #|||||||||||||||||||||||||||||||||||||||||||||||||||||||
-    #Funciones auxiliares
-    #|||||||||||||||||||||||||||||||||||||||||||||||||||||||
+    #||||||||||||||||||||||||||||||||||||||||
+    #|||||||| Funciones auxiliares ||||||||||
+    #||||||||||||||||||||||||||||||||||||||||
 
     #Setter coche autonomo
     def setCocheAutonomo(self, vehiculo):
@@ -256,23 +247,26 @@ class CarlaEnv(gym.Env):
         self.ultimaPosicion = self.cocheAutonomo.get_location()
         self.posicionInicial = self.cocheAutonomo.get_location()
 
+
     #Funcion que mueve el coche a la posicion inicial y setea el sensor de colision
     def moverCochePosicionIncial(self):
         print("Moviendo coche a la nueva posicion aleatoria")
-        #self.cocheAutonomo.apply_control(carla.VehicleControl(throttle=0.0, brake=1.0)) # Frenamos el coche
         self.cocheAutonomo.set_simulate_physics(False)
         if self.cocheAutonomo is not None:
+
             if self.sensorColision is not None: #Si hay un sensor de colision lo destruimos
                 self.sensorColisionOld = self.sensorColision
                 self.sensorColisionOld.destroy()
+            
             time.sleep(0.5)
+
             puntoDeSpawn = random.choice(self.puntosSpawn)
             self.cocheAutonomo.set_transform(puntoDeSpawn) # Movemos el coche a una posicion aleatoria
             self.posicionInicial = puntoDeSpawn.location
-            self.ultimaPosicion = puntoDeSpawn.location #Para que no de problemas al calcular la recompensa
+            self.ultimaPosicion = puntoDeSpawn.location
+            
             time.sleep(1)
 
-            #setear sensor de colision
             self.cocheAutonomo.set_simulate_physics(True)
             self.sensorColision = self.world.try_spawn_actor(self.sensorColisionb, carla.Transform(), attach_to=self.cocheAutonomo) # Añadimos el sensor de colisiones desde aqui porque sino causa problemas
             self.sensorColision.listen(lambda colision: self.manejadorColisiones(colision))

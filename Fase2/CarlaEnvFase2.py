@@ -24,8 +24,8 @@ except IndexError:
 
 
 register(
-    id='CarlaEnviroment',                                # Call it whatever you want
-    entry_point='CarlaEnvFase2:CarlaEnv',                # Module name and class name
+    id='CarlaEnviroment',                                # Nombre del entorno
+    entry_point='CarlaEnvFase2:CarlaEnv',                # Nombre del modulo y de la clase
 )
 class CarlaEnv(gym.Env):
 
@@ -68,7 +68,9 @@ class CarlaEnv(gym.Env):
         self.moverCochePosicionIncial()
         self.cache = [] 
         obs, info = self.get_observation()
+
         return obs, info 
+
 
     def step(self, action):
 
@@ -82,30 +84,21 @@ class CarlaEnv(gym.Env):
         else:
             self.cocheAutonomo.apply_control(carla.VehicleControl(brake=1.0, throttle=0.0, steer=0.0)) #Frenar
 
-        time.sleep(0.10) #Tiempo entre acciones que toma el coche (0.25 es el tiempo de reaccion de un humano promedio)
+        time.sleep(0.10) #Tiempo entre acciones que toma el coche
 
-        # Obtener la observación actual (por ejemplo, imagen de la cámara)
+        # Obtener la observación actual
         obs, info = self.get_observation()
 
         reward = self.calcularRecompensa()  # Aquí va la lógica de recompensa
         
         # Verificar si el episodio ha terminado (por ejemplo, si el coche ha chocado)
-        done = self.terminated()  # Lógica para determinar cuándo se acaba el episodio
-        
-        
-        """"
-        # Devolver la información necesaria para el aprendizaje
-        
-        print("")
-        print("Estado: " + info)
-        print("Recompensa: " + str(reward))
-        print(self.cache) # Para ir viendo como va el entorno
-        """
+        done = self.terminated()
 
         self.cache = [] #Vaciamos la cache para que no se acumulen los datos
         
 
         return obs, reward, done, False, info 
+    
 
     def get_observation(self):
 
@@ -150,16 +143,19 @@ class CarlaEnv(gym.Env):
 
         return acu
 
+
     def terminated(self):
-        if 0 in self.cache or time.time() - self.temporizador > 90: #El episodio termina si el coche choca o si pasa 90 segundos
+        if (0 in self.cache) or (time.time() - self.temporizador > 90): #El episodio termina si el coche choca o si pasa 90 segundos
             return True
         else:
             return False
+
 
     def render(self, mode='human'):
         # Renderizar el entorno para visualizarlo (si es necesario)
         info, obs = self.get_observation()
         print(info)
+
 
     def close(self):
         print("Cerrando entorno")
@@ -174,11 +170,9 @@ class CarlaEnv(gym.Env):
         print("Cerrando entorno")
 
 
-
-    
-    #||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-    #Funciones para manejar los sensores del coche autonomo
-    #||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+#||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+#||||||||||||||| Funciones para manejar los sensores del coche autonomo |||||||||||||||||||||||||||
+#||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
     def manejarSensorLinea(self, invasion):
         if 2 not in self.cache and 3 not in self.cache and 4 not in self.cache:
@@ -197,16 +191,19 @@ class CarlaEnv(gym.Env):
             
             #print("Invasion de linea detectada de tipo: " + str(invasion.crossed_lane_markings[0].type))
 
+
     def manejadorColisiones(self, colision):
         if self.sensorColision is not None:
             self.cache.append(0) #Hacemos que el sensor deje de registrar colisiones(Produce ciertos bugs)
             self.sensorColision.stop()
             print("Colision detectada")
 
+
     def manejarSensorObstaculos(self, obstaculo):
         if 1 not in self.cache:
             print("Obstaculo detectado")
             self.cache.append(1)    
+
 
     def manejarSensorCamara(self, world, vehicle):
             spectator = world.get_spectator()
@@ -214,6 +211,7 @@ class CarlaEnv(gym.Env):
             spectator.set_transform(carla.Transform(transform.location + carla.Location(z=50),
             carla.Rotation(pitch=-90)))
         
+
     #Va un poco lagado entonces no lo utilizo, dejas para hacer video futuro
     def procesarImagen(self, imagen): #Para que se vea como circula el coche
         imagen = np.array(imagen.raw_data)
@@ -222,62 +220,7 @@ class CarlaEnv(gym.Env):
 
         cv2.imshow("", img2)
         cv2.waitKey(100) # Espera 100ms para que se vea la imagen
-
-    """
-    #Este metodo te genera una imagen con los puntos del lidar
-    def manejarSensorLidar(self, lidar):
-       
         
-        #data = np.frombuffer(lidar.raw_data, dtype=np.float32)  # Convertir a numpy
-        #data = np.reshape(data, (-1, 4))  # Cada punto tiene (X, Y, Z, Intensidad)
-        #print(f"LiDAR recibió {data.shape[0]} puntos")
-        #print(data)  # Imprimir los primeros 5 puntos para ver el formato
-        
-
-        lidar_points = np.frombuffer(lidar.raw_data, dtype=np.float32)  # Convertir a numpy
-        lidar_points = np.reshape(lidar_points, (-1, 4))  # Cada punto tiene (X, Y, Z, Intensidad)
-        X_MIN, X_MAX = -20, 20   # Rango en X
-        Y_MIN, Y_MAX = -20, 20   # Rango en Y
-        Z_MIN, Z_MAX = -2, 2     # Rango en Z (para filtrar puntos)
-
-        # Definir la resolución de la imagen (pixeles por metro)
-        RESOLUTION = 0.2  # Cada pixel representa 0.2m
-
-        # Calcular tamaño de la imagen
-        IMAGE_WIDTH = int((X_MAX - X_MIN) / RESOLUTION)
-        IMAGE_HEIGHT = int((Y_MAX - Y_MIN) / RESOLUTION)
-
-                # Filtrar puntos dentro de los límites definidos
-        mask = (lidar_points[:, 0] >= X_MIN) & (lidar_points[:, 0] <= X_MAX) & \
-            (lidar_points[:, 1] >= Y_MIN) & (lidar_points[:, 1] <= Y_MAX) & \
-            (lidar_points[:, 2] >= Z_MIN) & (lidar_points[:, 2] <= Z_MAX)
-        lidar_points = lidar_points[mask]
-
-        # Convertir coordenadas X, Y a índices de imagen
-        x_img = ((lidar_points[:, 0] - X_MIN) / RESOLUTION).astype(np.int32)
-        y_img = ((lidar_points[:, 1] - Y_MIN) / RESOLUTION).astype(np.int32)
-
-        # Normalizar la intensidad (0 a 255)
-        intensity = lidar_points[:, 3]
-        intensity = np.clip(intensity * 255, 0, 255).astype(np.uint8)
-
-        # Crear imagen BEV en blanco
-        bev_image = np.zeros((IMAGE_HEIGHT, IMAGE_WIDTH), dtype=np.uint8)
-
-        # Colocar los puntos en la imagen BEV
-        bev_image[y_img, x_img] = intensity  
-
-        self.bufferImagenes.append(bev_image) # Agregar la imagen a la lista de imágenes
-        if len(self.bufferImagenes) >= 3: #El mayor es por si ocurre un error y superar los 3 frames en la variable
-            self.frameStackeado = np.stack((self.bufferImagenes[0], self.bufferImagenes[1], self.bufferImagenes[2]), axis=-1)
-            cv2.imshow('Frame stackeado', self.frameStackeado)
-            cv2.waitKey(1)
-            self.bufferImagenes = []
-
-        #cv2.imwrite("imagenes/imagen_lidar.png", bev_image)
-
-    """
-
 
     def manejarSensorLidar(self, lidar):
         
@@ -329,9 +272,9 @@ class CarlaEnv(gym.Env):
 
 
 
-    #|||||||||||||||||||||||||||||||||||||||||||||||||||||||
-    #Funciones auxiliares
-    #|||||||||||||||||||||||||||||||||||||||||||||||||||||||
+#||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+#||||||||||||||| Funciones auxiliares |||||||||||||||||||||||||||
+#||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
     def destruirActores(self):
         if len(self.listaActores) > 0:
@@ -382,9 +325,9 @@ class CarlaEnv(gym.Env):
 
         self.listaActores.append(vehiculoAutonomo)
 
-        #||||||||||||||||||||||||||||
-        #|||||||| Sensores ||||||||||
-        #||||||||||||||||||||||||||||
+        #||||||||||||||||||||||||||||||||||||||||
+        #|||||||| Creamos los sensores ||||||||||
+        #||||||||||||||||||||||||||||||||||||||||
 
         #Spawneamos camara para ver vehiculo
         camarab = blueprint_library.find('sensor.camera.rgb')
@@ -471,14 +414,12 @@ class CarlaEnv(gym.Env):
         sensorColision.listen(lambda colision: self.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision
         sensorInvasion.listen(lambda invasion: self.manejarSensorLinea(invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
         sensorObstaculos.listen(lambda obstaculo: self.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-        
+        #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
+
         #!!!!!!!!!!! SOLO TENER 1 ACTIVO A LA VEZ !!!!!!!!!!!
         sensorLidar.listen(lambda lidar: self.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
         #sensorSemantico.listen(lambda semantico: self.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
         #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-        #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
-
 
         return vehiculoAutonomo
         

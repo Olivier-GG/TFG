@@ -30,17 +30,13 @@ except IndexError:
 
 import carla
 
-# |||||| Listas con todos los actores ||||||||
-
 listaActores = [] #Se añaden todos los actores
 listaCocheAutonomo = [] #Se añade todos los sensores del coche autonomo y el coche autonomo para poder ser borrados
 listaNPC = [] #Se añaden todos los sensores de los NPC y los NPC para poder ser borrados
 
 
-
-# ||||||| Funcion para spawnear el coche autonomo y añadirle los sensores necesarios ||||||||||
-
-def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mundo y la libreria de blueprints para poder spawnear los actores 
+#Función para spawnear el coche autonomo y añadirle los sensores necesarios
+def spawnearVehiculoAutonomo (world, blueprint_library, env):
 
     print("Empezamos a spawnear el coche autonomo")
 
@@ -116,60 +112,56 @@ def spawnearVehiculoAutonomo (world, blueprint_library, env): #Se le pasa el mun
         print("Sensor de obstaculos spawneado")
 
 
-
-    #||||||||||||||||||||||
-    #Activamos los sensores
-    #||||||||||||||||||||||
+    #||||||||||||||||||||||||||||||||||||||||||
+    #|||||||| Activamos los sensores ||||||||||
+    #||||||||||||||||||||||||||||||||||||||||||
 
     #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
+    #sensorColision.listen(lambda colision: env.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision, (este se crea en el enviroment)
     camara.listen(lambda image: env.manejarSensorCamara(world, vehiculoAutonomo)) #En vez de procesar lo recibido por el sensor, se mueve al espectador para que siga al coche
-    #sensorColision.listen(lambda colision: env.manejadorColisiones(colision)) #Para que se imprima por pantalla cuando se detecte una colision
     sensorInvasion.listen(lambda invasion: env.manejarSensorLinea(invasion)) #Para que se imprima por pantalla cuando se detecte una invasion de linea
     sensorObstaculos.listen(lambda obstaculo: env.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
    
 
-
     return vehiculoAutonomo
 
 
+#|||||||||||||||||||||||||||||||||||||
+#|||||||| Funciones auxiliares |||||||
+#|||||||||||||||||||||||||||||||||||||
 
-# |||||||| Funciones auxiliares ||||||||||
-
-# Cargar desde JSON
+# Cargar tabla desde JSON
 def cargar_qtable(filename):
     with open("TablasFase1/" + filename + ".json", "r") as f:
-        q_table = json.load(f)  # Cargar la lista desde JSON
+        q_table = json.load(f) 
         print("Qtable cargada: " + filename)
     return np.array(q_table) 
 
-
+# Incializa la Qtable
 def initialize_q_table(state_space, action_space):
   Qtable = np.zeros((state_space, action_space))
   return Qtable
 
 
 
-#||||||||||||||||||||||||||||||||||||||||||||||||
-#||||||||||||||||||||||||||||||||||||||||||||||||
-#||||||||||||||||||||||||||||||||||||||||||||||||
-#||||||||||||||| MAIN |||||||||||||||||||||||||||
-#||||||||||||||||||||||||||||||||||||||||||||||||
-#||||||||||||||||||||||||||||||||||||||||||||||||
+#|||||||||||||||||||||||||||||||||||||
+#||||||||||||||| MAIN ||||||||||||||||
+#|||||||||||||||||||||||||||||||||||||
 def main () :
 
     try:
 
-        #|||| Paso 1, conectar el cliente con el servidor e inicializar enviroment ||||||||
+        #Paso 1, conectar el cliente con el servidor e inicializar enviroment
         
         cliente = carla.Client('localhost', 2000)
         cliente.set_timeout(15.0)
-        cliente.load_world('Town03') #Cargamos la cuidad que deseemos
+        cliente.load_world('Town03')
         world = cliente.get_world()
         blueprint_library = world.get_blueprint_library()
 
         #Incializamos el entorno de gym
         env = CarlaEnv(cliente)
-        vehiculo = spawnearVehiculoAutonomo(world, blueprint_library, env) # Se le pasa el enviromental para poder manejar los sensores
+        vehiculo = spawnearVehiculoAutonomo(world, blueprint_library, env)
         env.setCocheAutonomo(vehiculo)
 
         state_space = env.observation_space.n
@@ -180,37 +172,33 @@ def main () :
 
         print("Conexion con el servidor establecida y todas las variables principales inicializadas")
 
-
         #|||||||||||||||||| Parametros para el entrenamiento |||||||||||||||||
 
         # Parametros de entrenamiento
-        n_training_episodes = 4005  # Total training episodes
-        learning_rate = 0.1         # Learning rate
+        n_training_episodes = 4005  # Numero total de episodios de entrenamiento
+        learning_rate = 0.1         # Tasa de aprendizaje
 
         # Parametros de evaluación
-        n_eval_episodes = 100        # Total number of test episodes
+        n_eval_episodes = 100        # Numero total de episodios de evaluación
 
         # Parametros de episodio
-        max_steps = 200              # Max steps per episode
-        gamma = 0.10                 # Discounting rate 
+        max_steps = 200              # Numero maximo de pasos por episodio
+        gamma = 0.10                 # Factor de descuento
 
         # Parametros de exploración
-        max_epsilon = 1.0             # Exploration probability at start
-        min_epsilon = 0.05            # Minimum exploration probability
-        decay_rate = 0.0020           # Exponential decay rate for exploration prob
+        max_epsilon = 1.0             # Probabilidad de exploración inicial
+        min_epsilon = 0.05            # Probabilidad de exploración final
+        decay_rate = 0.0020           # Tasa de decaimiento de epsilon
 
-        #|||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+        #||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 
-
-
-        #||||| Paso 2, Spawneo de trafico para poder realizar la simulacion ||||||||
+        #Paso 2, Spawneo de trafico para poder realizar la simulacion
     
         print("\nProcedo a spawnear 30 coches y 10 peatones")
         
-        listaNPC.extend(spawnearCoches(30,10)) #Codigo de ejemplo carla 
+        listaNPC.extend(spawnearCoches(30,10))
 
-
-        # ||||||||||||| Paso 3, elegir si queremos evaluar o entrenar agente ||||||||||||||
+        #Paso 3, elegir si queremos evaluar o entrenar agente
 
         print("\nIntroduce una 't' si quieres entrenar el agente o una 'e' si quieres evaluarlo(Seleccionar en el codigo que Qtable desea cargar -línea 221-): ")
         eleccion = input()
@@ -256,12 +244,10 @@ def main () :
 
 
 
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||
 # |||||||||| Funciones para destruir los actores ||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||
+
 
 def destruirNPC():
     if len(listaNPC) > 0:
@@ -276,7 +262,6 @@ def destruirNPC():
 def destruirCocheAutonomo():
     if len(listaCocheAutonomo) > 0:
         print(len(listaCocheAutonomo))
-        #Se elimina la lista al reves para eliminar primero los sensores y despues el coche autonomo
         listaCocheAutonomo[0].apply_control(carla.VehicleControl(throttle=0.0, brake=1.0))
         time.sleep(0.1)
         for elemento in listaCocheAutonomo:
@@ -306,9 +291,7 @@ def destruirActores():
 
 
 
-
 #Para que se ejecute el main cuando se inicia el programa
-
 if __name__ == '__main__':
 
     try:

@@ -7,6 +7,7 @@ import torch
 from tqdm import tqdm
 from stable_baselines3.common.logger import configure
 
+#Función para entrenar el agente
 def train_agent(env):
 
     #Creamos los directorios para almacenar la informacion
@@ -21,7 +22,7 @@ def train_agent(env):
 
     # Puedes ver los resulatdos que va dando el entrenamiento con el comando -> tensorboard --logdir logs
 
-    TIMESTEPS = 25000 #Equivaldria a unos 3000 episodios de los anteirores
+    TIMESTEPS = 25000 # Total de timesteps por iteración
     iteraciones = 0
 
     while iteraciones < 40:
@@ -30,12 +31,11 @@ def train_agent(env):
         model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, log_interval=1, progress_bar=True)
         model.save(f"{model_dir}/dqn_lidar_{TIMESTEPS * (iteraciones)}_V7") 
         
-    
     print("Entrenamiento finalizado, puede proceder a evaluarlo")
 
 
 
-# Evaluate the agent
+#Función para evaluar el agente entrenado
 def evaluate_agent(env, directory):
 
     model = DQN.load(directory, env=env)
@@ -48,9 +48,7 @@ def evaluate_agent(env, directory):
     
     progress_bar = tqdm(total=total_timesteps, desc="Evaluando agente", unit="timestep")
 
-
     obs, _ = env.reset()
-    
 
     while timestep < total_timesteps:
         
@@ -61,18 +59,16 @@ def evaluate_agent(env, directory):
         timestep += 1
         progress_bar.update(1)
 
-        
         if terminated:
             obs, _ = env.reset()
             terminated = False
            
-
     progress_bar.close()
 
     mean_reward = np.mean(rewards)
     var_reward = np.var(rewards)
+
     print(f"\n\n🔹 Timesteps: {timestep} | Recompensa Promedia: {mean_reward:.4f} | Varianza: {var_reward:.4f}")
-    
     print("\n✅ Evaluación completa.")
 
     

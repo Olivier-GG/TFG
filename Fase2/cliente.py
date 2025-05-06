@@ -35,12 +35,9 @@ import carla
 listaNPC = []
 
 #||||||||||||||||||||||||||||||||||||||||||||||||
-#||||||||||||||||||||||||||||||||||||||||||||||||
-#||||||||||||||||||||||||||||||||||||||||||||||||
 #||||||||||||||| MAIN |||||||||||||||||||||||||||
 #||||||||||||||||||||||||||||||||||||||||||||||||
-#||||||||||||||||||||||||||||||||||||||||||||||||
-#||||||||||||||||||||||||||||||||||||||||||||||||
+
 def main () :
 
     try:
@@ -53,14 +50,12 @@ def main () :
 
         #Incializamos el entorno de gym
         env = gym.make('CarlaEnviroment')
-        
+
         #Comprobamos que el enviroment es correcto
         print ("Comprobando el enviroment...")
-
         check_env(env)
-
         print ("✅El enviroment es correcto")
-        #Comprobamos que el enviroment es correcto
+        
 
         print("Conexion con el servidor establecida y todas las variables principales inicializadas")
 
@@ -68,7 +63,7 @@ def main () :
     
         print("\nProcedo a spawnear 30 coches y 10 peatones")
         
-        listaNPC.extend(spawnearCoches(30,10)) #Codigo de ejemplo carla(posiblemente spawneen menos peatones, porque pueden ser que spawneen en un sitio que ya hay uno)
+        listaNPC.extend(spawnearCoches(30,10)) #Codigo de ejemplo carla (posiblemente spawneen menos peatones, porque pueden ser que spawneen en un sitio que ya hay uno)
 
 
         # ||||||||||||| Paso 3, elegir si queremos evaluar o entrenar agente ||||||||||||||
@@ -79,21 +74,18 @@ def main () :
         if eleccion == "e" or eleccion == "E":
 
             print("Evaluando agente...")
-            
+
             evaluate_agent(env, 'models/dqn_Semantic_425000_noDelay') 
 
             print("✅Evaluar agente completado")
-
             
         elif eleccion == "t" or eleccion == "T":
 
-            
             print("               Comenzando el entrenamiento        \n")
 
             train_agent(env)
 
-            print("\n\n\n")
-            print("               ✅Entrenamiento completado         \n")
+            print("\n\n\n               ✅Entrenamiento completado         \n")
 
         else:
             print("Opción no válida")
@@ -114,14 +106,7 @@ def main () :
 
     
 
-
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||| Funciones para destruir los actores ||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-# |||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||
-
+#Funcion para destruir los actores
 def destruirNPC():
     if len(listaNPC) > 0:
         for npc in listaNPC:
@@ -133,44 +118,7 @@ def destruirNPC():
         print("No hay ningun NPC para destruir")
 
 
-""""
-
-def destruirCocheAutonomo():
-    if len(listaCocheAutonomo) > 0:
-        print(len(listaCocheAutonomo))
-        #Se elimina la lista al reves para eliminar primero los sensores y despues el coche autonomo
-        listaCocheAutonomo[0].apply_control(carla.VehicleControl(throttle=0.0, brake=1.0))
-        time.sleep(0.1)
-        for elemento in listaCocheAutonomo:
-            elemento.destroy()
-            if elemento in listaActores:
-                listaActores.remove(elemento)
-
-        listaCocheAutonomo.clear()
-        time.sleep(2)#Tiempo de precaución
-        
-        print("Se ha vaciado la lista de todos los sensores y el coche autonomo")
-    else:
-        print("No hay ningun coche autonomo para destruir")
-
-def destruirActores():
-    destruirNPC()
-    if len(listaActores) > 0:
-        for actor in reversed(listaActores):
-            if actor.is_alive:
-                actor.destroy()
-            if actor in listaCocheAutonomo:
-                listaCocheAutonomo.remove(actor)
-        listaActores.clear()
-        print("Se ha vaciado toda la lista de actores")
-    else:
-        print("No hay ningun actor para destruir")
-
-
-"""
-
 #Para que se ejecute el main cuando se inicia el programa
-
 if __name__ == '__main__':
 
     try:
