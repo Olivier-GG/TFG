@@ -23,7 +23,7 @@ def train_agent(env, Q, n_training_episodes, max_steps, gamma, learning_rate, ep
 
         #Cada 200 episodios guardamos la Qtable para ver la evolución
         if episode % 200 == 0:
-            guardar_qtable(Qtable, "V2-" + str(episode))
+            guardar_qtable(Qtable, "V3/V3-" + str(episode))
 
         
         for step in range(max_steps):
@@ -106,5 +106,5 @@ def epsilon_greedy_policy(Qtable, state, epsilon, env):
 
 #Funcion para guardar la Qtable en un fichero json
 def guardar_qtable(q_table, filename):
-    with open("TablasFase1/" + filename + ".json", "w") as f:
+    with open("Tablas/" + filename + ".json", "w") as f:
         json.dump(q_table.tolist(), f)

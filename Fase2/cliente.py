@@ -75,7 +75,7 @@ def main () :
 
             print("Evaluando agente...")
 
-            evaluate_agent(env, 'models/dqn_Semantic_425000_noDelay') 
+            evaluate_agent(env, 'modelos/models(Lidar)/dqn_semantico_250000') 
 
             print("✅Evaluar agente completado")
             
