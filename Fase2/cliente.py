@@ -2,7 +2,6 @@ import glob
 import os
 import sys
 import random
-from ScriptsAuxiliares.spawn_npc import spawnearCoches
 import numpy as np
 import glob
 import os
@@ -18,6 +17,9 @@ from gymnasium import spaces
 from CarlaEnvFase2 import CarlaEnv
 from FuncionesEntrenamientoFase2 import train_agent, evaluate_agent
 from stable_baselines3.common.env_checker import check_env
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../ScriptsAuxiliares/')))
+from spawn_npc import spawnearCoches
 
 # Encontrar modulo de carla
 try:
@@ -75,7 +77,7 @@ def main () :
 
             print("Evaluando agente...")
 
-            evaluate_agent(env, 'modelos/models(Lidar)/dqn_semantico_250000') 
+            evaluate_agent(env, 'modelos/models(Lidar)/dqn_semantico_550000_V1') 
 
             print("✅Evaluar agente completado")
             

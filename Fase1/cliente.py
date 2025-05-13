@@ -2,7 +2,6 @@ import glob
 import os
 import sys
 import random
-from ScriptsAuxiliares.spawn_npc import spawnearCoches
 import numpy as np
 import glob
 import os
@@ -17,6 +16,9 @@ import gymnasium as gym
 from gymnasium import spaces
 from CarlaEnv import CarlaEnv
 from FuncionesEntrenamientoFase1 import train_agent, evaluate_agent
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../ScriptsAuxiliares/')))
+from spawn_npc import spawnearCoches
 
 # Encontrar modulo de carla
 try:
