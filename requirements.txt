@@ -4,13 +4,5 @@ carla
 tqdm
 stable-baselines3
 stable-baselines3[extra]
-torch
-torchvision
 tensorboard
-tensorboardX
 matplotlib
-scipy
-scikit-learn
-opencv-python
-Pillow
-pyyaml

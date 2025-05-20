@@ -1,34 +1,15 @@
-import glob
 import os
 import sys
-import random
 import numpy as np
-import glob
 import os
 import sys
 import time
-import tqdm
-from typing_extensions import Literal
-import pdb
 import json
-import cv2
-import gymnasium as gym
-from gymnasium import spaces
 from CarlaEnv import CarlaEnv
 from FuncionesEntrenamientoFase1 import train_agent, evaluate_agent
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../ScriptsAuxiliares/')))
 from spawn_npc import spawnearCoches
-
-# Encontrar modulo de carla
-try:
-    sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
-        sys.version_info.major,
-        sys.version_info.minor,
-        'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
-except IndexError:
-    pass
-
 
 import carla
 

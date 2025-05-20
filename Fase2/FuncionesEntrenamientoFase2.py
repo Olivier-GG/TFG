@@ -1,9 +1,6 @@
 import numpy as np
-import random
-import json
 from stable_baselines3 import DQN
 import os
-import torch
 from tqdm import tqdm
 from stable_baselines3.common.logger import configure
 
@@ -11,8 +8,8 @@ from stable_baselines3.common.logger import configure
 def train_agent(env):
 
     #Creamos los directorios para almacenar la informacion
-    model_dir = "modelsV7Lidar"
-    log_dir = "logsTensorboardV7Lidar"
+    model_dir = "mdelos/modelsV7(Lidar)"
+    log_dir = "logs/logsTensorboardV7Lidar"
     os.makedirs(model_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
     
