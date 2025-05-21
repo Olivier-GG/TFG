@@ -1,6 +1,3 @@
-import glob
-import os
-import sys
 import gymnasium as gym
 from gymnasium import spaces
 import numpy as np
@@ -9,16 +6,6 @@ import time
 import cv2
 import random
 import math
-
-# Encontrar modulo de carla
-try:
-    sys.path.append(glob.glob('../carla/dist/carla-*%d.%d-%s.egg' % (
-        sys.version_info.major,
-        sys.version_info.minor,
-        'win-amd64' if os.name == 'nt' else 'linux-x86_64'))[0])
-except IndexError:
-    pass
-
 
 class CarlaEnv(gym.Env):
     def __init__(self, client):

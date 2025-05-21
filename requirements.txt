@@ -2,7 +2,7 @@ gymnasium
 numpy
 carla
 tqdm
-stable-baselines3
 stable-baselines3[extra]
 tensorboard
 matplotlib
+opencv-python

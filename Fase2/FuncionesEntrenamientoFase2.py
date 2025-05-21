@@ -2,13 +2,12 @@ import numpy as np
 from stable_baselines3 import DQN
 import os
 from tqdm import tqdm
-from stable_baselines3.common.logger import configure
 
 #Función para entrenar el agente
 def train_agent(env):
 
     #Creamos los directorios para almacenar la informacion
-    model_dir = "mdelos/modelsV7(Lidar)"
+    model_dir = "modelos/modelsV7(Lidar)"
     log_dir = "logs/logsTensorboardV7Lidar"
     os.makedirs(model_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)

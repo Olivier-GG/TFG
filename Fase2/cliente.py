@@ -5,6 +5,7 @@ import sys
 import gymnasium as gym
 from FuncionesEntrenamientoFase2 import train_agent, evaluate_agent
 from stable_baselines3.common.env_checker import check_env
+from CarlaEnvFase2 import CarlaEnv
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../ScriptsAuxiliares/')))
 from spawn_npc import spawnearCoches
@@ -55,7 +56,7 @@ def main () :
 
             print("Evaluando agente...")
 
-            evaluate_agent(env, 'modelos/models(Lidar)/dqn_semantico_550000_V1') 
+            evaluate_agent(env, 'modelos/models(Lidar)/dqn_lidar_550000_V1') 
 
             print("✅Evaluar agente completado")
             
