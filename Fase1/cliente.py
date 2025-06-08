@@ -5,6 +5,7 @@ import os
 import sys
 import time
 import json
+import argparse
 from CarlaEnv import CarlaEnv
 from FuncionesEntrenamientoFase1 import train_agent, evaluate_agent
 
@@ -132,6 +133,12 @@ def initialize_q_table(state_space, action_space):
 #|||||||||||||||||||||||||||||||||||||
 def main () :
 
+    if len(sys.argv) != 2:
+        print("Error: Debes proporcionar exactamente 1 argumento. Y este debe ser 'entrenar' o 'evaluar'")
+        sys.exit(1)
+
+    parametro = sys.argv[1]
+
     try:
 
         with open('../configuracion.json', 'r') as file:
@@ -186,10 +193,7 @@ def main () :
 
         #Paso 3, elegir si queremos evaluar o entrenar agente
 
-        print("\nIntroduce una 't' si quieres entrenar el agente o una 'e' si quieres evaluarlo: ")
-        eleccion = input()
-
-        if eleccion == "e" or eleccion == "E":
+        if parametro == "evaluar":
 
             print("Evaluando agente...")
             Qtable = cargar_qtable(configuracion['Fase1']['QTable_Evaluacion'])
@@ -202,9 +206,8 @@ def main () :
             print("Std reward: ", std_reward)
 
             
-        elif eleccion == "t" or eleccion == "T":
+        elif parametro == "entrenar":
 
-            
             print("               Comenzando el entrenamiento        \n")
 
             train_agent(env, Qtable, n_training_episodes, max_steps, gamma, learning_rate, max_epsilon, min_epsilon, decay_rate, Qtable, max_epsilon)
@@ -213,7 +216,7 @@ def main () :
             print("               Entrenamiento completado         \n")
 
         else:
-            print("Opción no válida")
+            print("Opción no válida, el argumento debe ser 'entrenar' o 'evaluar'")
 
         #Cerramos el enviroment
         env.close()

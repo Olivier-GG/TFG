@@ -22,6 +22,12 @@ listaNPC = []
 
 def main () :
 
+    if len(sys.argv) != 2:
+        print("Error: Debes proporcionar exactamente 1 argumento. Y este debe ser 'entrenar' o 'evaluar'")
+        sys.exit(1)
+
+    parametro = sys.argv[1]
+
     try:
 
         with open('../configuracion.json', 'r') as file:
@@ -53,27 +59,24 @@ def main () :
 
         # ||||||||||||| Paso 3, elegir si queremos evaluar o entrenar agente ||||||||||||||
 
-        print("\nIntroduce una 't' si quieres entrenar el agente o una 'e' si quieres evaluarlo (seleccionar modelo en línea 78 de cliente.py): ")
-        eleccion = input()
+        if parametro == "evaluar":
 
-        if eleccion == "e" or eleccion == "E":
-
-            print("Evaluando agente " +  configuracion['Fase2']['Modelo_Evaluacion'] + "...")
+            print("Evaluando agente " +  configuracion['Fase2']['Sensor_Activo'] + "...")
 
             evaluate_agent(env, configuracion['Fase2']['Modelo_Evaluacion']) 
 
             print("✅Evaluar agente completado")
             
-        elif eleccion == "t" or eleccion == "T":
+        elif parametro == "entrenar":
 
-            print("               Comenzando el entrenamiento        \n")
+            print("               Comenzando el entrenamiento usando el sensor " +  configuracion['Fase2']['Sensor_Activo'] + "\n")
 
             train_agent(env)
 
             print("\n\n\n               ✅Entrenamiento completado         \n")
 
         else:
-            print("Opción no válida")
+            print("Opción no válida, el argumento debe ser 'entrenar' o 'evaluar'")
 
         #Cerramos el enviroment
         env.close()
