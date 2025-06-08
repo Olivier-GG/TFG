@@ -134,6 +134,9 @@ def main () :
 
     try:
 
+        with open('../configuracion.json', 'r') as file:
+            configuracion = json.load(file)
+
         #Paso 1, conectar el cliente con el servidor e inicializar enviroment
         
         cliente = carla.Client('localhost', 2000)
@@ -183,13 +186,13 @@ def main () :
 
         #Paso 3, elegir si queremos evaluar o entrenar agente
 
-        print("\nIntroduce una 't' si quieres entrenar el agente o una 'e' si quieres evaluarlo(Seleccionar en el codigo que Qtable desea cargar -línea 209-): ")
+        print("\nIntroduce una 't' si quieres entrenar el agente o una 'e' si quieres evaluarlo: ")
         eleccion = input()
 
         if eleccion == "e" or eleccion == "E":
 
             print("Evaluando agente...")
-            Qtable = cargar_qtable("V2/V2-4000")
+            Qtable = cargar_qtable(configuracion['Fase1']['QTable_Evaluacion'])
             print(Qtable)
             
             mean_reward, std_reward = evaluate_agent(env, max_steps, n_eval_episodes, Qtable)

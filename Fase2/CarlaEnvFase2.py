@@ -6,6 +6,7 @@ import time
 import cv2
 import random
 import math
+import json
 from gymnasium.envs.registration import register
 
 register(
@@ -18,6 +19,9 @@ class CarlaEnv(gym.Env):
 
     def __init__(self, render_mode=None):
         
+        with open('../configuracion.json', 'r') as file:
+            self.configuracion = json.load(file)
+
         self.render_mode = render_mode
         self.cliente = carla.Client('localhost', 2000)
         self.world = self.cliente.get_world()
@@ -38,11 +42,10 @@ class CarlaEnv(gym.Env):
         
         self.action_space = spaces.Discrete(4)  # Puede ser aceleración, frenado, dirección, etc.
 
-        # Definir el espacio de observación (Elegir el que se vaya a utilizar)
-        #Se han puesto 2 osberservaciones con resoluciones (solo puede haber una activa a la vez) diferentes para que salte un error en caso de dejar ambos sensores activos a la vez
-
-        self.observation_space = gym.spaces.Box(-10, 10, (1000,4,3), dtype=np.float32) # Imagen stackeada que nos devuelve el lidar
-        #self.observation_space = spaces.Box(0,255,(300,300,3),np.uint8) # Imagen RGB de 300x300 que me devuelve el sensor semantico
+        if self.configuracion['Fase2']['Sensor_Activo'] == 'Lidar':
+            self.observation_space = gym.spaces.Box(-10, 10, (1000,4,3), dtype=np.float32) # Imagen stackeada que nos devuelve el lidar
+        elif self.configuracion['Fase2']['Sensor_Activo'] == 'Semantico':
+            self.observation_space = spaces.Box(0,255,(300,300,3),np.uint8) # Imagen RGB de 300x300 que me devuelve el sensor semantico
         
 
     def reset(self, seed=None, options=None):
@@ -401,10 +404,10 @@ class CarlaEnv(gym.Env):
         sensorObstaculos.listen(lambda obstaculo: self.manejarSensorObstaculos(obstaculo)) #Para que se imprima por pantalla cuando se detecte un obstaculo
         #camara.listen(lambda image: procesarImagen(image)) # Para activar la vista en primera persona
 
-        #!!!!!!!!!!! SOLO TENER 1 ACTIVO A LA VEZ !!!!!!!!!!!
-        sensorLidar.listen(lambda lidar: self.manejarSensorLidar(lidar)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-        #sensorSemantico.listen(lambda semantico: self.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
-        #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        if self.configuracion['Fase2']['Sensor_Activo'] == 'Lidar':
+            sensorLidar.listen(lambda lidar: self.manejarSensorLidar(lidar))
+        elif self.configuracion['Fase2']['Sensor_Activo'] == 'Semantico':
+            sensorSemantico.listen(lambda semantico: self.manejarSensorSemantico(semantico)) #Para que se imprima por pantalla cuando se detecte un obstaculo
 
         return vehiculoAutonomo
         

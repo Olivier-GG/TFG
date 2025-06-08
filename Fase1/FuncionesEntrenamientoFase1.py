@@ -1,9 +1,15 @@
 import numpy as np
 import random
 import json
+import os
 
 #Funcion par el entrenamiento del agente
 def train_agent(env, Q, n_training_episodes, max_steps, gamma, learning_rate, epsilon, min_epsilon, decay_rate, Qtable, max_epsilon):
+
+    with open('../configuracion.json', 'r') as file:
+            configuracion = json.load(file)
+
+    os.makedirs("Tablas/" + configuracion['Fase1']['Version_Nuevo_Entrenamiento'], exist_ok=True)
 
     for episode in range(n_training_episodes):
         # Reduce epsilon, para aumentar la explotación y disminuir la exploración
@@ -23,7 +29,8 @@ def train_agent(env, Q, n_training_episodes, max_steps, gamma, learning_rate, ep
 
         #Cada 200 episodios guardamos la Qtable para ver la evolución
         if episode % 200 == 0:
-            guardar_qtable(Qtable, "V3/V3-" + str(episode))
+            nombreTabla = configuracion['Fase1']['Version_Nuevo_Entrenamiento'] + "/" + configuracion['Fase1']['Version_Nuevo_Entrenamiento'] + "-" + str(episode)
+            guardar_qtable(Qtable, nombreTabla)
 
         
         for step in range(max_steps):

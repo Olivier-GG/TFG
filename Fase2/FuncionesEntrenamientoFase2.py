@@ -1,20 +1,26 @@
 import numpy as np
 from stable_baselines3 import DQN
 import os
+import json
 from tqdm import tqdm
 
 #Función para entrenar el agente
 def train_agent(env):
 
+    with open('../configuracion.json', 'r') as file:
+        configuracion = json.load(file)
+
     #Creamos los directorios para almacenar la informacion
-    model_dir = "modelos/modelsV7(Lidar)"
-    log_dir = "logs/logsTensorboardV7Lidar"
+    model_dir = configuracion['Fase2']['Directorio_Nuevo_Modelo']
+    log_dir = configuracion['Fase2']['Directorio_Nuevos_Logs']
     os.makedirs(model_dir, exist_ok=True)
     os.makedirs(log_dir, exist_ok=True)
     
     #Seleccionamos el tipo de modelo que queremos(segun el tipo de sensor que usemos)
-    #model = DQN('CnnPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=50000, exploration_fraction=0.80, gamma=0.7, learning_starts=1000)  #Para usar el Sensor Semantico
-    model = DQN('MlpPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=50000, exploration_fraction=0.80, gamma=0.7, learning_starts=1000) # Para el Lidar
+    if configuracion['Fase2']['Sensor_Activo'] == 'Semantico':
+        model = DQN('CnnPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=50000, exploration_fraction=0.80, gamma=0.7, learning_starts=1000)  #Para usar el Sensor Semantico
+    elif configuracion['Fase2']['Sensor_Activo'] == 'Lidar':
+        model = DQN('MlpPolicy', env, verbose=1, device='cuda', tensorboard_log=log_dir, buffer_size=50000, exploration_fraction=0.80, gamma=0.7, learning_starts=1000) # Para el Lidar
 
     # Puedes ver los resulatdos que va dando el entrenamiento con el comando -> tensorboard --logdir logs
 
@@ -34,6 +40,9 @@ def train_agent(env):
 #Función para evaluar el agente entrenado
 def evaluate_agent(env, directory):
 
+    with open('../configuracion.json', 'r') as file:
+        configuracion = json.load(file)
+
     model = DQN.load(directory, env=env)
 
     rewards = []
@@ -42,7 +51,7 @@ def evaluate_agent(env, directory):
 
     total_timesteps = 2000  # Total de timesteps para la evaluación
     
-    progress_bar = tqdm(total=total_timesteps, desc="Evaluando agente", unit="timestep")
+    progress_bar = tqdm(total=total_timesteps, desc="Evaluando agente " + configuracion['Fase2']['Sensor_Activo'], unit="timestep")
 
     obs, _ = env.reset()
 

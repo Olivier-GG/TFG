@@ -1,0 +1,12 @@
+{
+  "Fase1" :{
+    "QTable_Evaluacion": "V2/V2-4000",
+    "Version_Nuevo_Entrenamiento": "V4"
+  },
+  "Fase2" :{
+    "Modelo_Evaluacion": "modelos/models(Lidar)/dqn_lidar_550000_V1",
+    "Sensor_Activo": "Lidar",
+    "Directorio_Nuevo_Modelo": "modelos/modelsV7(Lidar)",
+    "Directorio_Nuevos_Logs": "logs/logsTensorboardV7Lidar"
+  }
+}

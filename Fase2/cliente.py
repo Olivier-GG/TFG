@@ -2,6 +2,7 @@ import os
 import sys
 import os
 import sys
+import json
 import gymnasium as gym
 from FuncionesEntrenamientoFase2 import train_agent, evaluate_agent
 from stable_baselines3.common.env_checker import check_env
@@ -22,6 +23,9 @@ listaNPC = []
 def main () :
 
     try:
+
+        with open('../configuracion.json', 'r') as file:
+            configuracion = json.load(file)
 
         #|||| Paso 1, conectar el cliente con el servidor e inicializar enviroment ||||||||
         
@@ -54,9 +58,9 @@ def main () :
 
         if eleccion == "e" or eleccion == "E":
 
-            print("Evaluando agente...")
+            print("Evaluando agente " +  configuracion['Fase2']['Modelo_Evaluacion'] + "...")
 
-            evaluate_agent(env, 'modelos/models(Lidar)/dqn_lidar_550000_V1') 
+            evaluate_agent(env, configuracion['Fase2']['Modelo_Evaluacion']) 
 
             print("✅Evaluar agente completado")
             
