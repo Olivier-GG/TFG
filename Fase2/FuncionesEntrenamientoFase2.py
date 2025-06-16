@@ -31,7 +31,7 @@ def train_agent(env):
         iteraciones += 1
 
         model.learn(total_timesteps=TIMESTEPS, reset_num_timesteps=False, log_interval=1, progress_bar=True)
-        model.save(f"{model_dir}/dqn_lidar_{TIMESTEPS * (iteraciones)}_V7") 
+        model.save(f"{model_dir}/dqn_{configuracion['Fase2']['Sensor_Activo']}_{TIMESTEPS * (iteraciones)}")
         
     print("Entrenamiento finalizado, puede proceder a evaluarlo")
 
